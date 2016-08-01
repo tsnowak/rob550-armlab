@@ -260,15 +260,6 @@
       <string>0</string>
      </property>
     </widget>
-    <zorder>layoutWidget</zorder>
-    <zorder>layoutWidget</zorder>
-    <zorder>layoutWidget</zorder>
-    <zorder>sldrGrip1</zorder>
-    <zorder>groupBox</zorder>
-    <zorder>sldrGrip2</zorder>
-    <zorder>G1LableS</zorder>
-    <zorder>rdoutGrip1</zorder>
-    <zorder>rdoutGrip2</zorder>
    </widget>
    <widget class="QSlider" name="sldrMaxTorque">
     <property name="geometry">
@@ -886,8 +877,8 @@
    <widget class="QGroupBox" name="groupBox">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>768</y>
+      <x>2</x>
+      <y>760</y>
       <width>971</width>
       <height>26</height>
      </rect>
@@ -900,7 +891,7 @@
       <rect>
        <x>70</x>
        <y>0</y>
-       <width>132</width>
+       <width>905</width>
        <height>18</height>
       </rect>
      </property>
@@ -930,6 +921,23 @@
      <string>Grip 2</string>
     </property>
    </widget>
+   <zorder>videoFrame</zorder>
+   <zorder>SliderFrame</zorder>
+   <zorder>sldrMaxTorque</zorder>
+   <zorder>TqLabel</zorder>
+   <zorder>sldrSpeed</zorder>
+   <zorder>SpLabel</zorder>
+   <zorder>OutputFrame</zorder>
+   <zorder>rdoutTorq</zorder>
+   <zorder>rdoutSpeed</zorder>
+   <zorder>layoutWidget</zorder>
+   <zorder>VidFrame</zorder>
+   <zorder>PixelCoordLabel</zorder>
+   <zorder>PixelCoordLabel_2</zorder>
+   <zorder>rdoutMousePixels</zorder>
+   <zorder>rdoutMouseWorld</zorder>
+   <zorder>G2lableS</zorder>
+   <zorder>groupBox</zorder>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>

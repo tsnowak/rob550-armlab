@@ -70,8 +70,8 @@ class Gui(QtGui.QMainWindow):
         """ Connect Buttons to Functions 
         LAB TASK: NAME AND CONNECT BUTTONS AS NEEDED
         """
-        self.ui.btnUser1.setText("EXAMPLE FUNCTION")
-        self.ui.btnUser1.clicked.connect(self.exampleFunction)
+        self.ui.btnUser1.setText("Affine Calibration")
+        self.ui.btnUser1.clicked.connect(self.affine_cal)
 
 
 
@@ -168,7 +168,7 @@ class Gui(QtGui.QMainWindow):
             self.video.mouse_click_id += 1
 
             """ Update status label text """
-            self.ui.rdoutStatus.setText("Affine Calibration: Click point %d" 
+            self.ui.rdoutStatus.setText("Affine Calibration: Click Point %d" 
                                       %(self.video.mouse_click_id + 1))
 
             """ 
@@ -195,17 +195,19 @@ class Gui(QtGui.QMainWindow):
                 self.ui.rdoutStatus.setText("Waiting for input")
 
                 """ 
-                Uncomment to gether affine calibration matrix numbers 
-                on terminal
+                print affine calibration matrix numbers to terminal
                 """ 
-                #print self.video.aff_matrix
+                print self.video.aff_matrix
 
-    def exampleFunction(self):
+    def affine_cal(self):
         """ 
-        Function called when button pressed.
-        updates the status text label 
+        Function called when affine calibration button is called.
+        Note it only chnage the flag to record the next mouse clicks
+        and updates the status text label 
         """
-        self.ui.rdoutStatus.setText("Example Function Called")
+        self.video.aff_flag = 1 
+        self.ui.rdoutStatus.setText("Affine Calibration: Click Point %d" 
+                                    %(self.video.mouse_click_id + 1))
  
 def main():
     app = QtGui.QApplication(sys.argv)

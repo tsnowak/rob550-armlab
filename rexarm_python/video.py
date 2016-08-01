@@ -9,17 +9,6 @@ class Video():
         self.capture.set(4, 960)
         self.currentFrame=np.array([])
 
-        """
-        OpenCV Blob Detector
-        You will need to tune this and make a better one
-        """
-        
-        self.detectorParams = cv2.SimpleBlobDetector_Params()
-        self.detectorParams.minArea = 1000
-        self.detectorParams.maxArea = 5000
-        self.detectorParams.filterByArea = True
-        self.detector = cv2.SimpleBlobDetector_create(self.detectorParams)
-
         """ 
         Affine Calibration Variables 
         Currently only takes three points: center of arm and two adjacent, 
@@ -29,8 +18,8 @@ class Video():
         self.aff_npoints = 3
         self.real_coord = np.float32([[0., 0.], [305.,-305.], [-305.,-305.]])
         self.mouse_coord = np.float32([[0.0, 0.0],[0.0, 0.0],[0.0, 0.0]])      
-        self.mouse_click_id = 0;
-        self.aff_flag = 0;
+        self.mouse_click_id = 0
+        self.aff_flag = 0
         self.aff_matrix = np.float32((2,3))
     
     def captureNextFrame(self):
@@ -58,17 +47,14 @@ class Video():
 
     def loadCalibration(self):
         """
-        Load calibration from file and applies to the image:
+        Load csmera distortion calibration from file and applies to the image:
         Look at camera_cal.py final lines to see how that is done
+        This is optional, you do not need to implement distortion correction
         """
         pass
 
     def blobDetector(self):
-        img = self.currentFrame
-        hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv,(110,50,50),(130,255,255))
-        mask = cv2.erode(mask, None, iterations=2)
-        mask = cv2.dilate(mask, None, iterations=2)
-        keypoints = self.detector.detect(mask)
-        imgWithBlobs = cv2.drawKeypoints(img, keypoints, np.array([]), (0,0,255), cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        self.currentFrame = imgWithBlobs
+        """
+        Implement your color blob detector here.  
+        You will need to detect 5 different color blobs
+        """
