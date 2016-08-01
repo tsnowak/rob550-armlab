@@ -17,16 +17,17 @@ class Rexarm():
     def __init__(self):
 
         """ Commanded Values """
-        self.joint_angles = [0.0, 0.0, 0.0, 0.0] # radians
+        self.num_joints = 6
+        self.joint_angles = [0.0] * self.num_joints # radians
         # you must change this to control each joint speed separately 
         self.speed = 0.5                         # 0 to 1
         self.max_torque = 0.5                    # 0 to 1
 
         """ Feedback Values """
-        self.joint_angles_fb = [0.0, 0.0, 0.0, 0.0] # radians
-        self.speed_fb = [0.0, 0.0, 0.0, 0.0]        # 0 to 1   
-        self.load_fb = [0.0, 0.0, 0.0, 0.0]         # -1 to 1  
-        self.temp_fb = [0.0, 0.0, 0.0, 0.0]         # Celsius               
+        self.joint_angles_fb = [0.0] * self.num_joints # radians
+        self.speed_fb = [0.0] * self.num_joints        # 0 to 1   
+        self.load_fb = [0.0] * self.num_joints         # -1 to 1  
+        self.temp_fb = [0.0] * self.num_joints         # Celsius               
 
         """ Waypoint Plan - TO BE USED LATER """
         self.plan = []
@@ -46,7 +47,7 @@ class Rexarm():
         You can uncomment the print statement to check commanded values.
         """    
         msg = dynamixel_command_list_t()
-        msg.len = 4
+        msg.len = 6
         self.clamp()
         for i in range(msg.len):
             cmd = dynamixel_command_t()
