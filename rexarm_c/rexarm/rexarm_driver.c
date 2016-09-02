@@ -222,7 +222,7 @@ main (int argc, char *argv[])
     getopt_add_bool (gopt, 'h', "help", 0, "Show this help screen");
     getopt_add_string (gopt, 'd', "device", "/dev/ttyUSB0", "Device name");
     getopt_add_int (gopt, 'b', "baud", "1000000", "Device baud rate");
-    getopt_add_int (gopt, 'n', "num_servos", "6", "Number of servos");
+    getopt_add_int (gopt, 'n', "num_servos", "4", "Number of servos");
     getopt_add_string (gopt, '\0', "status-channel", "ARM_STATUS", "LCM status channel");
     getopt_add_string (gopt, '\0', "command-channel", "ARM_COMMAND", "LCM command channel");
 
