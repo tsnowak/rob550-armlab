@@ -9,6 +9,7 @@ from lcmtypes import dynamixel_status_list_t
 
 PI = np.pi
 D2R = PI/180.0
+R2D = 180.0/3.141592
 ANGLE_TOL = 2*PI/180.0 
 
 
@@ -85,7 +86,34 @@ class Rexarm():
         arm is not damaged.
         LAB TASK: IMPLEMENT A CLAMP FUNCTION
         """
-        pass
+        #B = {-179.99,180}
+        #S = {125.8, -124.3}
+        #E = {125.8, -123.12}
+        #W = {128.9, -125.39}
+
+        if self.joint_angles_fb[0]*R2D < -100 or self.joint_angles[0] * R2D< -99:
+            self.joint_angles[0] = -98*D2R
+        elif self.joint_angles_fb[0]*R2D > 100 or self.joint_angles[0] * R2D > 99:
+            self.joint_angles[0] = 98*D2R
+
+        if self.joint_angles_fb[1]*R2D > 125.8 or self.joint_angles[1] * R2D > 124:
+            self.joint_angles[1] = 123*D2R
+        elif self.joint_angles_fb[1]*R2D < -124.3 or self.joint_angles[1] * R2D < -123:
+            self.joint_angles[1] = -122 *D2R
+
+        if self.joint_angles_fb[2]*R2D > 125.8 or self.joint_angles[2] * R2D > 124:
+            self.joint_angles[2] = 123*D2R
+        elif self.joint_angles_fb[2]*R2D < -123.12 or self.joint_angles[2] * R2D < -122:
+            self.joint_angles[2] = -121 *D2R
+
+        if self.joint_angles_fb[3]*R2D > 128.9 or self.joint_angles[3] * R2D > 128:
+            self.joint_angles[3] = 127*D2R
+        elif self.joint_angles_fb[3]*R2D < -125.39 or self.joint_angles[3] * R2D < -124:
+            self.joint_angles[3] = -123 *D2R
+
+        ## TODO: IMPLEMENT GRIP LIMITS ##
+
+        #pass
 
     def plan_command(self):
         """ Command planned waypoints """

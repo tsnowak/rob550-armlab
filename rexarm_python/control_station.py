@@ -61,8 +61,13 @@ class Gui(QtGui.QMainWindow):
         Connect Sliders to Function
         LAB TASK: CONNECT THE OTHER 5 SLIDERS IMPLEMENTED IN THE GUI 
         """ 
+        ## TODO: IMPLEMENT GRIP VALUE CONTROLS ##
         self.ui.sldrBase.valueChanged.connect(self.sliderChange)
+        self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
+        self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
+        self.ui.sldrWrist.valueChanged.connect(self.sliderChange)
         self.ui.sldrMaxTorque.valueChanged.connect(self.sliderChange)
+        self.ui.sldrSpeed.valueChanged.connect(self.sliderChange)
 
         """ Commands the arm as the arm initialize to 0,0,0,0 angles """
         self.sliderChange() 
@@ -136,9 +141,18 @@ class Gui(QtGui.QMainWindow):
         TO DO: Implement for the other sliders
         """
         self.ui.rdoutBase.setText(str(self.ui.sldrBase.value()))
+        self.ui.rdoutShoulder.setText(str(self.ui.sldrShoulder.value()))
+        self.ui.rdoutElbow.setText(str(self.ui.sldrElbow.value()))
+        self.ui.rdoutWrist.setText(str(self.ui.sldrWrist.value()))
         self.ui.rdoutTorq.setText(str(self.ui.sldrMaxTorque.value()) + "%")
+        self.ui.rdoutSpeed.setText(str(self.ui.sldrSpeed.value()) + "%")
         self.rex.max_torque = self.ui.sldrMaxTorque.value()/100.0
+        self.rex.speed = self.ui.sldrSpeed.value()/100.0
         self.rex.joint_angles[0] = self.ui.sldrBase.value()*D2R
+        self.rex.joint_angles[1] = self.ui.sldrShoulder.value()*D2R
+        self.rex.joint_angles[2] = self.ui.sldrElbow.value()*D2R
+        self.rex.joint_angles[3] = self.ui.sldrWrist.value()*D2R
+
         self.rex.cmd_publish()
 
     def mousePressEvent(self, QMouseEvent):
