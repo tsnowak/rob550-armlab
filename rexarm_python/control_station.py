@@ -10,6 +10,7 @@ from video import Video
 """ Radians to/from  Degrees conversions """
 D2R = 3.141592/180.0
 R2D = 180.0/3.141592
+PI = 3.141592
 
 """ Pyxel Positions of image in GUI """
 MIN_X = 310
@@ -77,20 +78,22 @@ class Gui(QtGui.QMainWindow):
         """
         self.ui.btnUser1.setText("Affine Calibration")
         self.ui.btnUser1.clicked.connect(self.affine_cal)
-        self.ui.btnUser2.setText("Reset Position");
-        self.ui.btnUser2.clicked.connect(self.prepToRecord_ResetPosition);
-        self.ui.btnUser3.setText("Reset Torque and Speed");
-        self.ui.btnUser3.clicked.connect(self.prepToRecord_ResetTorqueAndSpeed);
-        self.ui.btnUser4.setText("Start Training");
-        self.ui.btnUser4.clicked.connect(self.startToRecord);
-        self.ui.btnUser5.setText("Stop Traning");
-        self.ui.btnUser5.clicked.connect(self.stopRecord);
-        self.ui.btnUser6.setText("Clear Record");
-        self.ui.btnUser6.clicked.connect(self.clearRecord);
-        self.ui.btnUser7.setText("Play Record");
-        self.ui.btnUser7.clicked.connect(self.playRecord);
-
-
+        self.ui.btnUser2.setText("STEP1: Reset Position")
+        self.ui.btnUser2.clicked.connect(self.iResetPosition)
+        self.ui.btnUser3.clicked.connect(self.iResetTorqueAndSpeed)
+        self.ui.btnUser3.setText("STEP2: Reset Torque and Speed")
+        self.ui.btnUser4.setText("STEP3: Train Begin")
+        self.ui.btnUser4.clicked.connect(self.iTrainBegin)
+        self.ui.btnUser5.setText("STEP4(r): GetWayPoint")
+        self.ui.btnUser5.clicked.connect(self.iGetWayPoint)
+        self.ui.btnUser5.setEnabled(False)
+        self.ui.btnUser6.setText("STEP5: Stop Recording")
+        self.ui.btnUser6.clicked.connect(self.iTrainStop)
+        self.ui.btnUser6.setEnabled(False)
+        self.ui.btnUser7.clicked.connect(self.iReplayBegin)
+        self.ui.btnUser7.setText("Replay")
+        self.ui.btnUser10.setText("PlayStop")
+        self.ui.btnUser10.clicked.connect(self.iReplayStop)
 
     def play(self):
         """ 
@@ -137,20 +140,32 @@ class Gui(QtGui.QMainWindow):
             else:
                 self.ui.rdoutMouseWorld.setText("(-,-)")
 
+        
+        """
+        Set button avalibity.
+        """
+
+        self.iSetButtonAbility()
+
         """ 
         Updates status label when rexarm playback is been executed.
         This will be extended to includ eother appropriate messages
         """ 
+
         if(self.rex.plan_status == 1):
             self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
                                     %(self.rex.wpt_number + 1))
-            self.playOneRecord();
 
-        """
-        Status = 2: recording.
-        """
+        """###############################################
+        Frank Added Here
+        ###############################################"""
+
         if (self.rex.plan_status == 2):
-            self.recordOneRecord();
+            self.iTrain_AddOneWay()
+
+        if (self.rex.plan_status == 5):
+            self.iReplay_PlayOneWay()
+
 
 
     def sliderChange(self):
@@ -232,98 +247,6 @@ class Gui(QtGui.QMainWindow):
                 """ 
                 print self.video.aff_matrix
 
-    def prepToRecord_ResetPosition(self):
-        print("prepToRecord_ResetPosition(): Automatically set speed to 5");
-        self.rex.speed = 5.0 / 100;
-        self.ui.sldrSpeed.setProperty("value",5);
-
-        print("prepToRecord_ResetPosition(): Automatically set all angle to 0");
-        self.rex.joint_angles[0] = 0;
-        self.rex.joint_angles[1] = 0;
-        self.rex.joint_angles[2] = 0;
-        self.rex.joint_angles[3] = 0;
-        self.ui.sldrBase.setProperty("value",0);
-        self.ui.sldrWrist.setProperty("value",0);
-        self.ui.sldrElbow.setProperty("value",0);
-        self.ui.sldrShoulder.setProperty("value",0);
-
-        print("prepToRecord_ResetPosition(): Automatically set torque to 25");
-        self.rex.max_torque = 25.0 / 100;
-        self.ui.sldrMaxTorque.setProperty("value", 25);
-
-        print("prepToRecord_ResetPosition(): Reset position");
-        self.rex.cmd_publish();
-
-
-    def prepToRecord_ResetTorqueAndSpeed(self):
-        print("prepToRecord_ResetPosition(): Automatically set torque to 25");
-        self.rex.max_torque = 0.0 / 100;
-        self.ui.sldrMaxTorque.setProperty("value", 0);
-        self.rex.speed = 0.0 / 100;
-        self.ui.sldrSpeed.setProperty("value",0);
-        print("prepToRecord_ResetPosition(): Reset position");
-        self.rex.cmd_publish();
-
-    def startToRecord(self):
-        print("startToRecord(): entered");
-        #initialize the record.
-        self.rex.plan = []
-        self.rex.plan_status = 2
-        self.rex.wpt_number = 0
-        self.rex.wpt_total = 0
-
-
-
-    def recordOneRecord(self):
-        oneRecord = [self.rex.joint_angles_fb[0],self.rex.joint_angles_fb[1],self.rex.joint_angles_fb[2],self.rex.joint_angles_fb[3]]
-        self.rex.plan.append(oneRecord);
-        self.rex.wpt_total = self.rex.wpt_total + 1
-        self.rex.wpt_number = self.rex.wpt_number + 1
-        print("Add Record: "),
-        print(oneRecord),
-        print("Current waypoint:"),
-        print(self.rex.wpt_number);
-
-
-    def stopRecord(self):
-        self.rex.plan_status = 0;
-
-    def clearRecord(self):
-        self.rex.plan = []
-        self.rex.plan_status = 0
-        self.rex.wpt_number = 0
-        self.rex.wpt_total = 0
-
-    def playRecord(self):
-        self.rex.plan_status = 1;
-        self.rex.wpt_number = 0;
-        self.rex.speed = 3.0 / 100;
-        self.ui.sldrSpeed.setProperty("value",5);
-        self.rex.max_torque = 60.0 / 100;
-        self.ui.sldrMaxTorque.setProperty("value", 60);
-
-
-    def playOneRecord(self):
-        if (self.rex.wpt_number < self.rex.wpt_total):
-            self.rex.joint_angles[0] = self.rex.plan[self.rex.wpt_number][0];
-            self.rex.joint_angles[1] = self.rex.plan[self.rex.wpt_number][1];
-            self.rex.joint_angles[2] = self.rex.plan[self.rex.wpt_number][2];
-            self.rex.joint_angles[3] = self.rex.plan[self.rex.wpt_number][3];
-            self.rex.wpt_number = self.rex.wpt_number + 1;
-            print("Play Record: "),
-            print([self.rex.joint_angles[0]*R2D,self.rex.joint_angles[1]*R2D,self.rex.joint_angles[2]*R2D,self.rex.joint_angles[3]*R2D]),
-            print("Current waypoint:"),
-            print(self.rex.wpt_number);
-            self.rex.cmd_publish()
-
-        else:
-            self.rex.plan_status = 0;
-
-
-
-
-
-
     def affine_cal(self):
         """ 
         Function called when affine calibration button is called.
@@ -334,6 +257,175 @@ class Gui(QtGui.QMainWindow):
         self.ui.rdoutStatus.setText("Affine Calibration: Click Point %d" 
                                     %(self.video.mouse_click_id + 1))
  
+
+    """
+    Button 1: Reset Position
+    """
+    def iSetJointAngle(self, jointIndex, value):
+        if (not (jointIndex == 0 or jointIndex == 1 or jointIndex == 2 or jointIndex == 3)):
+            print("Error: in iSetJointAngle(self, jointIndex, value): jointIndex should be integer in {0,1,2,3}")
+            pass
+        elif (not (value <= PI and value >= - PI)):
+            print("Error: in iSetJointAngle(self, jointIndex, value): value should be from - PI to PI")
+            pass
+        else:
+            self.rex.joint_angles[jointIndex] = value
+            if (jointIndex == 0):
+                self.ui.sldrBase.setProperty("value",0)
+            elif (jointIndex == 1):
+                self.ui.sldrShoulder.setProperty("value",0)
+            elif (jointIndex == 2):
+                self.ui.sldrElbow.setProperty("value",0)
+            elif (jointIndex == 3):
+                self.ui.sldrWrist.setProperty("value",0)
+            else:
+                print("iSetJointAngle(self,joitnIndex,value): Unexpected jointIndex value.")
+                pass
+    """
+    Button 2: Reset Torque and Speed
+    """
+    def iSetTorque(self, value):
+        if (not(value >= 0 and value <= 1)):
+            print("ERROR: In iSetTorque(self, value): value should be in range [0,1]");
+            pass
+        else:
+            self.rex.max_torque = value;
+            self.ui.rdoutTorq.setText(str(100 * value) + "%")
+            self.ui.sldrMaxTorque.setProperty("value",value*100)        
+
+    def iSetSpeed(self, value):
+        if (not(value >= 0 and value <= 1)):
+            print("ERROR: In iSetSpeed(self, value): value should be in range [0,1]");
+            pass
+        else:
+            self.rex.speed = value;
+            self.ui.rdoutSpeed.setText(str(100 * value) + "%")
+            self.ui.sldrSpeed.setProperty("value",value*100)        
+
+             
+    def iResetPosition(self):
+        self.iSetJointAngle(0,0)
+        self.iSetJointAngle(1,0)
+        self.iSetJointAngle(2,0)
+        self.iSetJointAngle(3,0)
+        self.rex.cmd_publish()
+    def iResetTorqueAndSpeed(self):
+        self.iSetTorque(0.0)
+        self.iSetSpeed(0.1)
+        self.rex.cmd_publish()
+
+
+    """
+    Button 3: Start Train.
+    """
+    def iTrain_ClearRecord(self):
+        self.rex.wpt = []
+        self.rex.wpt_number = 0
+        self.rex.wpt_total = 0
+        self.rex.way = []
+        self.rex.way_number = 0
+        self.rex.way_total = 0
+        print("hello.")
+
+    def iTrainBegin(self):
+        self.iTrain_ClearRecord()
+        self.rex.plan_status = 2
+        
+
+
+
+    """
+    In Play, keep recording.
+    """
+    def iTrain_FetchSensorData(self):
+        return [self.rex.joint_angles_fb[0],
+                self.rex.joint_angles_fb[1],
+                self.rex.joint_angles_fb[2],
+                self.rex.joint_angles_fb[3] ]
+
+    def iTrain_AddOneWay(self):
+        SensorData = self.iTrain_FetchSensorData()
+        self.rex.way.append(SensorData)
+        self.rex.way_total = self.rex.way_total + 1 # Have such data point up to now.
+        print("[#way="),
+        print(self.rex.way_total),
+        print(",#wpt="),
+        print(self.rex.wpt_total),
+        print("]");
+
+
+    """
+    Get Way Point:
+    """
+    def iGetWayPoint(self):
+        SensorData = self.iTrain_FetchSensorData()
+        self.rex.wpt.append(SensorData)
+        self.rex.wpt_total = self.rex.wpt_total + 1 # Have such data point up to now.
+        
+        print("[#way="),
+        print(self.rex.way_total),
+        print(",#wpt="),
+        print(self.rex.wpt_total),
+        print("]");
+        
+
+    """
+    Train stop:
+    """
+    def iTrainStop(self):
+        self.rex.plan_status = 0
+        print("Stop Recording!");
+
+
+    """
+    Replay
+    """
+    def iReplayBegin(self):
+        self.rex.plan_status = 5
+        self.rex.way_number = 0
+        print("Replay Start")
+
+    """
+    """
+    def iReplayStop(self):
+        self.rex.plan_status = 0;
+        self.rex.way_number = 0;
+
+    def iReplay_SetOneSensorData(self,valueIndex):
+        sensorData = self.rex.way[valueIndex]
+        self.iSetJointAngle(0,sensorData[0])
+        self.iSetJointAngle(1,sensorData[1])
+        self.iSetJointAngle(2,sensorData[2])
+        self.iSetJointAngle(3,sensorData[3])
+        self.rex.cmd_publish();
+
+    def iReplay_PlayOneWay(self):
+        if (self.rex.way_number == self.rex.way_total):
+            self.iReplayStop()
+        else:
+            self.iReplay_SetOneSensorData(self.rex.way_number)
+            self.rex.way_number = self.rex.way_number + 1
+            print("Playing:["),
+            print(self.rex.way_number),
+            print(","),
+            print(self.rex.way_total),
+            print("]");
+
+    """
+    Button Avalibity
+    """
+    def iSetButtonAbility(self):
+        if (self.rex.plan_status == 0):
+            self.ui.btnUser4.setEnabled(True)
+            self.ui.btnUser5.setEnabled(False)
+            self.ui.btnUser6.setEnabled(False)
+        if (self.rex.plan_status == 2):
+            self.ui.btnUser4.setEnabled(False)
+            self.ui.btnUser5.setEnabled(True)
+            self.ui.btnUser6.setEnabled(True)
+
+
+
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = Gui()
