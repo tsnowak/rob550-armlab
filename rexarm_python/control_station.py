@@ -18,7 +18,8 @@ MAX_X = 950
 
 MIN_Y = 30
 MAX_Y = 510
- 
+GLOBALERRORTORRANCE = 2.0 / 180 * PI
+
 class Gui(QtGui.QMainWindow):
     """ 
     Main GUI Class
@@ -91,7 +92,9 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser6.clicked.connect(self.iTrainStop)
         self.ui.btnUser6.setEnabled(False)
         self.ui.btnUser7.clicked.connect(self.iReplayBegin)
-        self.ui.btnUser7.setText("Replay")
+        self.ui.btnUser7.setText("Replay WholeWay")
+        self.ui.btnUser8.clicked.connect(self.iReplayWPTBegin)
+        self.ui.btnUser8.setText("Replay WayPoint")
         self.ui.btnUser10.setText("PlayStop")
         self.ui.btnUser10.clicked.connect(self.iReplayStop)
 
@@ -144,7 +147,7 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-
+        self.iPrintStatusTerminal()
         self.iSetButtonAbility()
 
         """ 
@@ -163,9 +166,12 @@ class Gui(QtGui.QMainWindow):
         if (self.rex.plan_status == 2):
             self.iTrain_AddOneWay()
 
+
         if (self.rex.plan_status == 5):
             self.iReplay_PlayOneWay()
 
+        if (self.rex.plan_status == 3):
+            self.iReplayWPT_PlayOneWay()
 
 
     def sliderChange(self):
@@ -328,6 +334,7 @@ class Gui(QtGui.QMainWindow):
         print("hello.")
 
     def iTrainBegin(self):
+        self.iSetTorque(0.0);
         self.iTrain_ClearRecord()
         self.rex.plan_status = 2
         
@@ -347,12 +354,7 @@ class Gui(QtGui.QMainWindow):
         SensorData = self.iTrain_FetchSensorData()
         self.rex.way.append(SensorData)
         self.rex.way_total = self.rex.way_total + 1 # Have such data point up to now.
-        print("[#way="),
-        print(self.rex.way_total),
-        print(",#wpt="),
-        print(self.rex.wpt_total),
-        print("]");
-
+        
 
     """
     Get Way Point:
@@ -362,11 +364,7 @@ class Gui(QtGui.QMainWindow):
         self.rex.wpt.append(SensorData)
         self.rex.wpt_total = self.rex.wpt_total + 1 # Have such data point up to now.
         
-        print("[#way="),
-        print(self.rex.way_total),
-        print(",#wpt="),
-        print(self.rex.wpt_total),
-        print("]");
+       
         
 
     """
@@ -381,9 +379,12 @@ class Gui(QtGui.QMainWindow):
     Replay
     """
     def iReplayBegin(self):
+        self.iSetTorque(0.5)
         self.rex.plan_status = 5
         self.rex.way_number = 0
         print("Replay Start")
+
+
 
     """
     """
@@ -405,11 +406,52 @@ class Gui(QtGui.QMainWindow):
         else:
             self.iReplay_SetOneSensorData(self.rex.way_number)
             self.rex.way_number = self.rex.way_number + 1
-            print("Playing:["),
-            print(self.rex.way_number),
-            print(","),
-            print(self.rex.way_total),
-            print("]");
+            
+
+
+    "Replay WPT"
+
+    def iReplayWPTBegin(self):
+        self.iSetTorque(0.5)
+        self.rex.plan_status = 3
+        self.rex.wpt_number = 0;
+
+    def iReplayWPT_GetSensorData(self):
+        return [self.rex.joint_angles_fb[0],
+                self.rex.joint_angles_fb[1],
+                self.rex.joint_angles_fb[2],
+                self.rex.joint_angles_fb[3] ]
+
+    def iCheckIfArrived(self, target,errorTorrance):
+        sensorData = self.iReplayWPT_GetSensorData()
+        error0 = abs(target[0] - sensorData[0])
+        error1 = abs(target[1] - sensorData[1])
+        error2 = abs(target[2] - sensorData[2])
+        error3 = abs(target[3] - sensorData[3])
+
+        if (error0 < errorTorrance and error1 < errorTorrance and error2 < errorTorrance and error3 < errorTorrance):
+            return True
+        else:
+            return False
+
+    def iReplayWPT_PlayOneWay(self):
+        if (self.rex.wpt_number == self.rex.wpt_total):
+            self.iReplayStop()
+        else:
+            thiswptnum = self.rex.wpt_number
+            target = self.rex.wpt[thiswptnum]
+            arrived = self.iCheckIfArrived(target,GLOBALERRORTORRANCE)
+            if (arrived):
+                self.rex.wpt_number = self.rex.wpt_number + 1
+            else:
+                self.iSetJointAngle(0,target[0]);
+                self.iSetJointAngle(1,target[1]);
+                self.iSetJointAngle(2,target[2]);
+                self.iSetJointAngle(3,target[3]);
+                self.rex.cmd_publish();
+
+
+
 
     """
     Button Avalibity
@@ -419,11 +461,39 @@ class Gui(QtGui.QMainWindow):
             self.ui.btnUser4.setEnabled(True)
             self.ui.btnUser5.setEnabled(False)
             self.ui.btnUser6.setEnabled(False)
+            
+
         if (self.rex.plan_status == 2):
             self.ui.btnUser4.setEnabled(False)
             self.ui.btnUser5.setEnabled(True)
             self.ui.btnUser6.setEnabled(True)
 
+        if (self.rex.plan_status == 0 and self.rex.way_total != 0):
+            self.ui.btnUser7.setEnabled(True)
+        else:
+            self.ui.btnUser7.setEnabled(False)
+        
+        if (self.rex.plan_status == 0 and self.rex.wpt_total != 0):
+            self.ui.btnUser8.setEnabled(True)
+        else:
+            self.ui.btnUser8.setEnabled(False)
+
+
+    def iPrintStatusTerminal(self):
+        print("[Status = "),
+        print(self.rex.plan_status),
+
+        print(",#way="),
+        print(self.rex.way_total),
+        print(",#way_now="),
+        print(self.rex.way_number),
+
+        print(",#wpt="),
+        print(self.rex.wpt_total),
+        print(",#wpt_now="),
+        print(self.rex.wpt_number),
+
+        print("]");
 
 
 def main():
