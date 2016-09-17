@@ -77,6 +77,18 @@ class Gui(QtGui.QMainWindow):
         """
         self.ui.btnUser1.setText("Affine Calibration")
         self.ui.btnUser1.clicked.connect(self.affine_cal)
+        self.ui.btnUser2.setText("Reset Position");
+        self.ui.btnUser2.clicked.connect(self.prepToRecord_ResetPosition);
+        self.ui.btnUser3.setText("Reset Torque and Speed");
+        self.ui.btnUser3.clicked.connect(self.prepToRecord_ResetTorqueAndSpeed);
+        self.ui.btnUser4.setText("Start Training");
+        self.ui.btnUser4.clicked.connect(self.startToRecord);
+        self.ui.btnUser5.setText("Stop Traning");
+        self.ui.btnUser5.clicked.connect(self.stopRecord);
+        self.ui.btnUser6.setText("Clear Record");
+        self.ui.btnUser6.clicked.connect(self.clearRecord);
+        self.ui.btnUser7.setText("Play Record");
+        self.ui.btnUser7.clicked.connect(self.playRecord);
 
 
 
@@ -132,6 +144,13 @@ class Gui(QtGui.QMainWindow):
         if(self.rex.plan_status == 1):
             self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
                                     %(self.rex.wpt_number + 1))
+            self.playOneRecord();
+
+        """
+        Status = 2: recording.
+        """
+        if (self.rex.plan_status == 2):
+            self.recordOneRecord();
 
 
     def sliderChange(self):
@@ -212,6 +231,98 @@ class Gui(QtGui.QMainWindow):
                 print affine calibration matrix numbers to terminal
                 """ 
                 print self.video.aff_matrix
+
+    def prepToRecord_ResetPosition(self):
+        print("prepToRecord_ResetPosition(): Automatically set speed to 5");
+        self.rex.speed = 5.0 / 100;
+        self.ui.sldrSpeed.setProperty("value",5);
+
+        print("prepToRecord_ResetPosition(): Automatically set all angle to 0");
+        self.rex.joint_angles[0] = 0;
+        self.rex.joint_angles[1] = 0;
+        self.rex.joint_angles[2] = 0;
+        self.rex.joint_angles[3] = 0;
+        self.ui.sldrBase.setProperty("value",0);
+        self.ui.sldrWrist.setProperty("value",0);
+        self.ui.sldrElbow.setProperty("value",0);
+        self.ui.sldrShoulder.setProperty("value",0);
+
+        print("prepToRecord_ResetPosition(): Automatically set torque to 25");
+        self.rex.max_torque = 25.0 / 100;
+        self.ui.sldrMaxTorque.setProperty("value", 25);
+
+        print("prepToRecord_ResetPosition(): Reset position");
+        self.rex.cmd_publish();
+
+
+    def prepToRecord_ResetTorqueAndSpeed(self):
+        print("prepToRecord_ResetPosition(): Automatically set torque to 25");
+        self.rex.max_torque = 0.0 / 100;
+        self.ui.sldrMaxTorque.setProperty("value", 0);
+        self.rex.speed = 0.0 / 100;
+        self.ui.sldrSpeed.setProperty("value",0);
+        print("prepToRecord_ResetPosition(): Reset position");
+        self.rex.cmd_publish();
+
+    def startToRecord(self):
+        print("startToRecord(): entered");
+        #initialize the record.
+        self.rex.plan = []
+        self.rex.plan_status = 2
+        self.rex.wpt_number = 0
+        self.rex.wpt_total = 0
+
+
+
+    def recordOneRecord(self):
+        oneRecord = [self.rex.joint_angles_fb[0],self.rex.joint_angles_fb[1],self.rex.joint_angles_fb[2],self.rex.joint_angles_fb[3]]
+        self.rex.plan.append(oneRecord);
+        self.rex.wpt_total = self.rex.wpt_total + 1
+        self.rex.wpt_number = self.rex.wpt_number + 1
+        print("Add Record: "),
+        print(oneRecord),
+        print("Current waypoint:"),
+        print(self.rex.wpt_number);
+
+
+    def stopRecord(self):
+        self.rex.plan_status = 0;
+
+    def clearRecord(self):
+        self.rex.plan = []
+        self.rex.plan_status = 0
+        self.rex.wpt_number = 0
+        self.rex.wpt_total = 0
+
+    def playRecord(self):
+        self.rex.plan_status = 1;
+        self.rex.wpt_number = 0;
+        self.rex.speed = 3.0 / 100;
+        self.ui.sldrSpeed.setProperty("value",5);
+        self.rex.max_torque = 60.0 / 100;
+        self.ui.sldrMaxTorque.setProperty("value", 60);
+
+
+    def playOneRecord(self):
+        if (self.rex.wpt_number < self.rex.wpt_total):
+            self.rex.joint_angles[0] = self.rex.plan[self.rex.wpt_number][0];
+            self.rex.joint_angles[1] = self.rex.plan[self.rex.wpt_number][1];
+            self.rex.joint_angles[2] = self.rex.plan[self.rex.wpt_number][2];
+            self.rex.joint_angles[3] = self.rex.plan[self.rex.wpt_number][3];
+            self.rex.wpt_number = self.rex.wpt_number + 1;
+            print("Play Record: "),
+            print([self.rex.joint_angles[0]*R2D,self.rex.joint_angles[1]*R2D,self.rex.joint_angles[2]*R2D,self.rex.joint_angles[3]*R2D]),
+            print("Current waypoint:"),
+            print(self.rex.wpt_number);
+            self.rex.cmd_publish()
+
+        else:
+            self.rex.plan_status = 0;
+
+
+
+
+
 
     def affine_cal(self):
         """ 
