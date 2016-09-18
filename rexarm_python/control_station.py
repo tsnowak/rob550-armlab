@@ -19,6 +19,8 @@ MAX_X = 950
 MIN_Y = 30
 MAX_Y = 510
 GLOBALERRORTORRANCE = 2.0 / 180 * PI
+GLOBALFASTSPEED = 0.7
+GLOBALSLOWSPEED = 0.1
 
 class Gui(QtGui.QMainWindow):
     """ 
@@ -93,8 +95,11 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser6.setEnabled(False)
         self.ui.btnUser7.clicked.connect(self.iReplayBegin)
         self.ui.btnUser7.setText("Replay WholeWay")
-        self.ui.btnUser8.clicked.connect(self.iReplayWPTBegin)
-        self.ui.btnUser8.setText("Replay WayPoint")
+        self.ui.btnUser8.clicked.connect(self.iReplayWPTBegin_FAST)
+        self.ui.btnUser8.setText("Replay WayPoint(FAST)")
+        self.ui.btnUser9.clicked.connect(self.iReplayWPTBegin_SLOW)
+        self.ui.btnUser9.setText("Replay WayPoint(SLOW)")
+
         self.ui.btnUser10.setText("PlayStop")
         self.ui.btnUser10.clicked.connect(self.iReplayStop)
 
@@ -411,11 +416,19 @@ class Gui(QtGui.QMainWindow):
 
     "Replay WPT"
 
-    def iReplayWPTBegin(self):
+    def iReplayWPTBegin_SLOW(self):
         self.iSetTorque(0.5)
+        self.iSetSpeed(GLOBALSLOWSPEED)
         self.rex.plan_status = 3
-        self.rex.wpt_number = 0;
+        self.rex.wpt_number = 0
 
+    def iReplayWPTBegin_FAST(self):
+        self.iSetTorque(0.5)
+        self.iSetSpeed(GLOBALFASTSPEED)
+        self.rex.plan_status = 3
+        self.rex.wpt_number = 0
+
+        
     def iReplayWPT_GetSensorData(self):
         return [self.rex.joint_angles_fb[0],
                 self.rex.joint_angles_fb[1],
@@ -475,8 +488,10 @@ class Gui(QtGui.QMainWindow):
         
         if (self.rex.plan_status == 0 and self.rex.wpt_total != 0):
             self.ui.btnUser8.setEnabled(True)
+            self.ui.btnUser9.setEnabled(True)
         else:
             self.ui.btnUser8.setEnabled(False)
+            self.ui.btnUser9.setEnabled(False)
 
 
     def iPrintStatusTerminal(self):
