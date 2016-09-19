@@ -58,3 +58,40 @@ class Video():
         Implement your color blob detector here.  
         You will need to detect 5 different color blobs
         """
+
+    """
+    Begin Ted's affine transform
+    """
+    def affineTransform(self):
+        """
+        We need Matrix A = [[px,py,1,0,0,0], [0,0,0,px,py,1]]
+        and b  = [Wx, Wy]??
+        s.t. - A[[a],[b],[c],[d],[e],[f]] = b
+        """
+        A = np.empty((0,6), np.float32)
+        B = np.empty((0,2), np.float32)
+
+        for x in range(1, self.mouse_click_id):
+            A_tmp = np.array([[self.mouse_coord[x][1], self.mouse_coord[x][2], 1, 0, 0, 0],
+                 [0, 0, 0, self.mouse_coord[x][1], self.mouse_coord[x][2], 1]])
+            A = np.vstack(A, A_tmp)
+
+            B_tmp = np.transpose(self.real_coord[x])
+            B = np.concatenate((B, B_tmp), axis=0)
+
+        print "Matrix A",
+        print A,
+
+        print "Matrix B",
+        print B,
+
+        C = np.linalg.solve(A,B)  
+        print "Matrix C",
+        print C,
+
+        if np.allclose(np.dot(A,C), B):
+            print 'Successfully found affine transform!'
+        else: 
+            print 'Failed to find affine transform!'
+
+        pass

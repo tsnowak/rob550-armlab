@@ -249,6 +249,8 @@ class Gui(QtGui.QMainWindow):
                 self.video.aff_matrix = cv2.getAffineTransform(
                                         self.video.mouse_coord,
                                         self.video.real_coord)
+
+                self.video.affineTransform(self)
             
                 """ Updates Status Label to inform calibration is done """ 
                 self.ui.rdoutStatus.setText("Waiting for input")
