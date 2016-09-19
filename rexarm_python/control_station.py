@@ -84,6 +84,7 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser2.setText("STEP1: Reset Position")
         self.ui.btnUser2.clicked.connect(self.iResetPosition)
         self.ui.btnUser3.clicked.connect(self.iResetTorqueAndSpeed)
+        
         self.ui.btnUser3.setText("STEP2: Reset Torque and Speed")
         self.ui.btnUser4.setText("STEP3: Train Begin")
         self.ui.btnUser4.clicked.connect(self.iTrainBegin)
@@ -102,6 +103,8 @@ class Gui(QtGui.QMainWindow):
 
         self.ui.btnUser10.setText("PlayStop")
         self.ui.btnUser10.clicked.connect(self.iReplayStop)
+
+       
 
     def play(self):
         """ 
@@ -152,7 +155,7 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-        self.iPrintStatusTerminal()
+        #self.iPrintStatusTerminal()########################################Here should be activated.
         self.iSetButtonAbility()
 
         """ 
@@ -178,6 +181,7 @@ class Gui(QtGui.QMainWindow):
         if (self.rex.plan_status == 3):
             self.iReplayWPT_PlayOneWay()
 
+        self.iShowFK()
 
     def sliderChange(self):
         """ 
@@ -511,6 +515,13 @@ class Gui(QtGui.QMainWindow):
         print(self.rex.wpt_number),
 
         print("]");
+
+
+
+
+    def iShowFK(self):
+        P0 = self.rex.rexarm_FK(self.rex.joint_angles_fb);
+        print(P0)
 
 
 def main():
