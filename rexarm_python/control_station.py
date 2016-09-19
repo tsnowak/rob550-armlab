@@ -254,7 +254,7 @@ class Gui(QtGui.QMainWindow):
                                         self.video.mouse_coord,
                                         self.video.real_coord)
 
-                self.video.affineTransform(self)
+                #self.video.affineTransform()
             
                 """ Updates Status Label to inform calibration is done """ 
                 self.ui.rdoutStatus.setText("Waiting for input")
@@ -521,7 +521,7 @@ class Gui(QtGui.QMainWindow):
 
     def iShowFK(self):
         P0 = self.rex.rexarm_FK(self.rex.joint_angles_fb);
-        print(P0)
+		#print(P0)
 
 
 def main():
