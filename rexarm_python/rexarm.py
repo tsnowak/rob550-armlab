@@ -1,6 +1,7 @@
 import lcm
 import time
 import numpy as np
+import math
 
 from lcmtypes import dynamixel_command_t
 from lcmtypes import dynamixel_command_list_t
@@ -11,6 +12,16 @@ PI = np.pi
 D2R = PI/180.0
 R2D = 180.0/3.141592
 ANGLE_TOL = 2*PI/180.0 
+
+
+"""
+FK Constant
+"""
+DH1_D = 116
+DH3_A = 100
+DH4_A = 100
+
+
 
 
 """ Rexarm Class """
@@ -127,7 +138,11 @@ class Rexarm():
         """ Command planned waypoints """
         pass
 
-    def rexarm_FK(dh_table, link):
+    def rexarm_FK(self,angles):
+
+        """
+        Note: the angles are the angles directly from the sensors, it should be in RAD
+        """
         """
         Calculates forward kinematics for rexarm
         takes a DH table filled with DH parameters of the arm
@@ -135,6 +150,32 @@ class Rexarm():
         returns a 4-tuple (x, y, z, phi) representing the pose of the 
         desired link
         """
+        
+
+
+        c1 = math.cos(angles[0])
+        s1 = math.sin(angles[0])
+        c2 = math.cos(angles[1])
+        s2 = math.sin(angles[1])
+        c3 = math.cos(angles[2])
+        s3 = math.sin(angles[2])
+        c4 = math.cos(angles[3])
+        s4 = math.sin(angles[3])
+
+        R01 = [[c1,-s1,0,0],[s1,c1,0,0],[0,0,1,DH1_D],[0,0,0,1]]
+        R12 = [[-s2,c2,0,0],[0,0,1,0],[c2,s2,0,0],[0,0,0,1]]
+        R23 = [[c3,s3,0,DH3_A],[-s3,c3,0,0],[0,0,1,0],[0,0,0,1]]
+        R34 = [[c4,s4,0.0,DH4_A],[-s4,c4,0,0],[0,0,1,0],[0.0,0.0,0.0,1.0]]
+        P4 = [[100],[0],[0],[1]]
+
+        P3 = np.dot(R34,P4)
+        P2 = np.dot(R23,P3)
+        P1 = np.dot(R12,P2)
+        P0 = np.dot(R01,P1)
+        
+        return P0
+
+
         pass
     	
     def rexarm_IK(pose, cfg):
