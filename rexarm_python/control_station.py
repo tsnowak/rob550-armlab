@@ -242,19 +242,20 @@ class Gui(QtGui.QMainWindow):
             and NOT openCV pre-programmed function as it is done now.
             """
             if(self.video.mouse_click_id == self.video.aff_npoints):
+                 
+                """ Perform affine calibration with OpenCV """
+                self.video.aff_matrix = cv2.getAffineTransform(
+                                        self.video.mouse_coord,
+                                        self.video.real_coord)
+
+                self.video.affineTransform()
+
                 """ 
                 Update status of calibration flag and number of mouse
                 clicks
                 """
                 self.video.aff_flag = 2
                 self.video.mouse_click_id = 0
-                
-                """ Perform affine calibration with OpenCV """
-                self.video.aff_matrix = cv2.getAffineTransform(
-                                        self.video.mouse_coord,
-                                        self.video.real_coord)
-
-                #self.video.affineTransform()
             
                 """ Updates Status Label to inform calibration is done """ 
                 self.ui.rdoutStatus.setText("Waiting for input")

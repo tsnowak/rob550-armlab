@@ -69,29 +69,36 @@ class Video():
         s.t. - A[[a],[b],[c],[d],[e],[f]] = b
         """
         A = np.empty((0,6), np.float32)
-        B = np.empty((0,2), np.float32)
+        B = np.empty((0,1), np.float32)
 
-        for x in range(1, self.mouse_click_id):
-            A_tmp = np.array([[self.mouse_coord[x][1], self.mouse_coord[x][2], 1, 0, 0, 0],
-                 [0, 0, 0, self.mouse_coord[x][1], self.mouse_coord[x][2], 1]])
-            A = np.vstack(A, A_tmp)
+        for x in range(0, self.mouse_click_id):
+            A_tmp = np.array([[self.mouse_coord[x][0], self.mouse_coord[x][1], 1, 0, 0, 0],
+                 [0, 0, 0, self.mouse_coord[x][0], self.mouse_coord[x][1], 1]])
+            A = np.vstack((A, A_tmp))
+            print A
 
-            B_tmp = np.transpose(self.real_coord[x])
+            B_tmp = np.array([[self.real_coord[x][0]], [self.real_coord[x][1]]])
+            print B_tmp 
+
             B = np.concatenate((B, B_tmp), axis=0)
+            print B
 
-        print "Matrix A",
-        print A,
+        print "Matrix A\n"
+        print A
 
-        print "Matrix B",
-        print B,
+        print "Matrix B\n"
+        print B
+ 
+        A_T = np.transpose(A)
 
-        C = np.linalg.solve(A,B)  
-        print "Matrix C",
-        print C,
+        C = np.dot(np.dot((np.linalg.inv(np.dot(A_T,A))), A_T), B) 
+
+        print "Matrix C\n"
+        print C
 
         if np.allclose(np.dot(A,C), B):
             print 'Successfully found affine transform!'
         else: 
             print 'Failed to find affine transform!'
-
+            
         pass
