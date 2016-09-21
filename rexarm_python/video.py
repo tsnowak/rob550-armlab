@@ -64,9 +64,16 @@ class Video():
     """
     def affineTransform(self):
         """
-        We need Matrix A = [[px,py,1,0,0,0], [0,0,0,px,py,1]]
-        and b  = [Wx, Wy]??
-        s.t. - A[[a],[b],[c],[d],[e],[f]] = b
+        To compute the affine transform in our simplified space with constant z
+        we simplify 
+        Ax = b to 
+        x = A-1b
+        But because A is not necessarily square we use the pseudo-inverse
+        x = (A^T*A)^(-1)*A^T*b
+
+        To form our matrices A and B from the mouse_coord and real_coord lists
+        for N correspondences we iteratively append to np.arrays based on N
+        mouse_click_id's.
         """
         A = np.empty((0,6), np.float32)
         B = np.empty((0,1), np.float32)
@@ -75,30 +82,34 @@ class Video():
             A_tmp = np.array([[self.mouse_coord[x][0], self.mouse_coord[x][1], 1, 0, 0, 0],
                  [0, 0, 0, self.mouse_coord[x][0], self.mouse_coord[x][1], 1]])
             A = np.vstack((A, A_tmp))
-            print A
 
             B_tmp = np.array([[self.real_coord[x][0]], [self.real_coord[x][1]]])
-            print B_tmp 
-
             B = np.concatenate((B, B_tmp), axis=0)
-            print B
 
-        print "Matrix A\n"
-        print A
+        #print "Matrix A\n"
+        #print A
 
-        print "Matrix B\n"
-        print B
+        #print "Matrix B\n"
+        #print B
  
         A_T = np.transpose(A)
 
         C = np.dot(np.dot((np.linalg.inv(np.dot(A_T,A))), A_T), B) 
 
-        print "Matrix C\n"
-        print C
-
+        """
+        Here we simply verify that the affine transform was correctly found
+        """
         if np.allclose(np.dot(A,C), B):
             print 'Successfully found affine transform!'
         else: 
             print 'Failed to find affine transform!'
-            
+            return
+
+        C_resize = np.reshape(C, (2, 3))
+
+        #print "Coefficient matrix for the affine transform.\n"
+        #print C_resize
+
+        return C_resize
+        
         pass

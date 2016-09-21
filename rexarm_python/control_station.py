@@ -146,8 +146,13 @@ class Gui(QtGui.QMainWindow):
             y = y - MIN_Y
             self.ui.rdoutMousePixels.setText("(%.0f,%.0f)" % (x,y))
             if (self.video.aff_flag == 2):
-                """ TO DO Here is where affine calibration must be used """
-                self.ui.rdoutMouseWorld.setText("(-,-)")
+                """
+                ######################################## 
+                TED added world_coords label to frame
+                ######################################## 
+                """
+                world_coords = np.dot(self.video.aff_matrix, np.array([[x],[y],[1]]))
+                self.ui.rdoutMouseWorld.setText("(%.0f,%.0f)" % (world_coords[0], world_coords[1]))
             else:
                 self.ui.rdoutMouseWorld.setText("(-,-)")
 
@@ -243,12 +248,19 @@ class Gui(QtGui.QMainWindow):
             """
             if(self.video.mouse_click_id == self.video.aff_npoints):
                  
-                """ Perform affine calibration with OpenCV """
+                """ Perform affine calibration with OpenCV
                 self.video.aff_matrix = cv2.getAffineTransform(
                                         self.video.mouse_coord,
                                         self.video.real_coord)
+                """
 
-                self.video.affineTransform()
+                """
+                ######################################## 
+                TED added affineTransform function here
+                ######################################## 
+                """
+
+                self.video.aff_matrix = self.video.affineTransform()
 
                 """ 
                 Update status of calibration flag and number of mouse
