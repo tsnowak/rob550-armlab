@@ -591,6 +591,50 @@ class Gui(QtGui.QMainWindow):
         P0 = self.rex.rexarm_FK(self.rex.joint_angles_fb);
 		#print(P0)
 
+    # function which sets the self.rex.joint_angles for each joint to the values
+    # calculated by the cubic polynomials as a function of time
+    def cubicPoly(self):
+
+        if self.rex.wpt_number == self.rex.wpt_total:
+            self.iReplayStop()
+
+        # TODO: set the start time when at the first waypoint!
+        for i in range(0,3): 
+            t = self.rex.st - iGetTime-Now()
+            self.rex.joint_angles[i] = self.rex.cubic_coeffs[i][0]+(self.rex.cub_coeffs[i][1]*t)+
+                         (self.rex.cubic_coeffs[i][2]*(t**2))+(self.rex.cubic_coeffs[i][3]*(t**3))
+
+    # function which calculates the coefficients for the cubic polynomial function            
+    def calcCubicCoeffs(self):
+        # each array index corresponds to the joint
+        v0 = [0,0,0,0]
+        vf = [0,0,0,0] 
+        t0 = [0,0,0,0]
+        tf = [1,1,1,1]
+
+        current_wpt = self.rex.wpt_number
+        next_wpt = self.rex.wpt_number+1
+
+        q0 = [self.rex.wpt[current_wpt][0], self.rex.wpt[current_wpt][1],
+              self.rex.wpt[current_wpt][2], self.rex.wpt[current_wpt][3]]
+        qf = [self.rex.wpt[next_wpt][0], self.rex.wpt[next_wpt][1],
+              self.rex.wpt[next_wpt][2], self.rex.wpt[next_wpt][3]]
+
+        # NOTE: format is Ax=b where A is the constant waypoint relation matrix, x is the unknown coefficients
+        # and bi is the [q0,v0,qf,vf] column vector for each joint
+
+        # For each joint create arrays A and b
+        # A: list of 4 numpy arrays that are 4x4
+        # b: list of 4 numpy arrays that are 4x1
+        # self.rex.cubic_coeffs: list of 4 numpy arrays that are 4x1
+        for i in range(0,3):
+            A[i] = np.array([[1,t0[i],t0[i]**2,t0[i]**3],[0,1,2*t0[i],3*(t0[i]**2)],[1,tf[i],tf[i]**2,tf[i]**3],
+                             [0,1,2*tf[i],3*(tf[i]**2)]])
+            b[i] = np.array([q0[i],v0[i],qf[i],vf[i])
+            self.rex.cubic_coeffs[i] = np.dot(np.inv(A[i]), b[i]) 
+
+        ## TODO: set start time variable 'st' here?
+        self.rex.st = iGetTime-Now()
 
     def iSaveData(self):
         """

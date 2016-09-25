@@ -54,6 +54,9 @@ class Rexarm():
         self.way_number = 0
         self.way_total = 0
 
+        # variables for the cubic polynomial fit routine
+        self.cubic_coeffs = []      # list of np arrays that are 4x1
+        self.st = 0                 # the start time of the cubic function 
         
         """ Setup LCM and subscribe """
         self.lc = lcm.LCM()
