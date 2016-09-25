@@ -9,20 +9,9 @@ Function: You can click the region of desired color, and the terminal can show t
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture(0)
-cap.set(3,800)
-cap.set(4,600)
 
 
 
-
-
-lower_blue = np.array([180,255,255])
-upper_blue = np.array([0,0,0])
-
-hsv_history = []
-
-CurrentIndex = 0;
 
 def push_hsv_value(hsv,x,y):
 	h = hsv[y][x][0]
@@ -59,41 +48,67 @@ def mouse_callback(event, x,y,flags, param):
 
 
 
+if __name__ == "__main__":
 
-cv2.namedWindow('Window',cv2.WINDOW_AUTOSIZE)
-cv2.setMouseCallback('Window',mouse_callback)
 
-cv2.namedWindow('MASK INRANGE',cv2.WINDOW_AUTOSIZE)
-cv2.setMouseCallback('MASK INRANGE',mouse_callback)
-
-while True:
-	ret, frame = cap.read()
-	if ret:
-		"""
-		Already got one frame.
-		"""
-
-		cv2.imshow('Window', frame)	
-		ch = cv2.waitKey(10)
-		if ch == 0x1B:
-			break
-
-		if ch == 0x75:
-			if len(hsv_history) > 1:
-				del hsv_history[-1]
-				lower_blue= recalculate_hsv_lower()
-				upper_blue= recalculate_hsv_upper()
-				print("Click Histary:"),
-				print(len(hsv_history)),
-				print("Current Range:"),
-				print(lower_blue),
-				print(upper_blue)
+	cap = cv2.VideoCapture(0)
+	cap.set(3,800)
+	cap.set(4,600)
 
 
 
-		"""
-		Do the thresholding.
-		"""
-		hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-		mask = cv2.inRange(hsv, lower_blue, upper_blue)
-    	cv2.imshow('MASK INRANGE',mask)
+
+
+	lower_blue = np.array([180,255,255])
+	upper_blue = np.array([0,0,0])
+
+	hsv_history = []
+
+	CurrentIndex = 0;
+
+
+
+
+	cv2.namedWindow('Window',cv2.WINDOW_AUTOSIZE)
+	cv2.setMouseCallback('Window',mouse_callback)
+
+	cv2.namedWindow('MASK INRANGE',cv2.WINDOW_AUTOSIZE)
+	cv2.setMouseCallback('MASK INRANGE',mouse_callback)
+
+	while True:
+		ret, frame = cap.read()
+		if ret:
+			"""
+			Already got one frame.
+			"""
+			bgr = cv2.cvtColor(frame, cv2.COLOR_BAYER_GR2BGR)
+			rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+			hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+
+			cv2.imshow('Window', bgr)
+				
+			ch = cv2.waitKey(10)
+			if ch == 0x1B:
+				break
+
+			if ch == 0x75:
+				if len(hsv_history) > 1:
+					del hsv_history[-1]
+					lower_blue= recalculate_hsv_lower()
+					upper_blue= recalculate_hsv_upper()
+					print("Click Histary:"),
+					print(len(hsv_history)),
+					print("Current Range:"),
+					print(lower_blue),
+					print(upper_blue)
+
+
+
+			"""
+			Do the thresholding.
+			"""
+			
+			
+			
+			mask = cv2.inRange(hsv, lower_blue, upper_blue)
+	    	cv2.imshow('MASK INRANGE',mask)		
