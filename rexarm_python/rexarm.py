@@ -110,24 +110,24 @@ class Rexarm():
         #E = {125.8, -123.12}
         #W = {128.9, -125.39}
 
-        if self.joint_angles_fb[0]*R2D < -179.99:
+        if self.joint_angles[0]*R2D < -179.99:
             self.joint_angles[0] = -179.99*D2R
-        elif self.joint_angles_fb[0]*R2D > 179.99:
+        elif self.joint_angles[0]*R2D > 179.99:
             self.joint_angles[0] = 179.99*D2R
 
-        if self.joint_angles_fb[1]*R2D > 125.8:
+        if self.joint_angles[1]*R2D > 125.8:
             self.joint_angles[1] = 125.8*D2R
-        elif self.joint_angles_fb[1]*R2D < -124.3:
+        elif self.joint_angles[1]*R2D < -124.3:
             self.joint_angles[1] = -124.3 *D2R
 
-        if self.joint_angles_fb[2]*R2D > 125.8:
+        if self.joint_angles[2]*R2D > 125.8:
             self.joint_angles[2] = 125.8*D2R
-        elif self.joint_angles_fb[2]*R2D < -123.12:
+        elif self.joint_angles[2]*R2D < -123.12:
             self.joint_angles[2] = -123.12 *D2R
 
-        if self.joint_angles_fb[3]*R2D > 128.9:
+        if self.joint_angles[3]*R2D > 128.9:
             self.joint_angles[3] = 128.9*D2R
-        elif self.joint_angles_fb[3]*R2D < -125.39:
+        elif self.joint_angles[3]*R2D < -125.39:
             self.joint_angles[3] = -125.39*D2R
 
         ## TODO: IMPLEMENT GRIP LIMITS ##

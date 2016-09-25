@@ -4,6 +4,8 @@ import numpy as np
 from PyQt4 import QtGui, QtCore, Qt
 from ui import Ui_MainWindow
 from rexarm import Rexarm
+import csv
+import time
 
 from video import Video
 
@@ -21,6 +23,12 @@ MAX_Y = 510
 GLOBALERRORTORRANCE = 2.0 / 180 * PI
 GLOBALFASTSPEED = 0.7
 GLOBALSLOWSPEED = 0.1
+
+GLOBALDFILENAME_WAY = "DATAFILE_WAY.csv"
+GLOBALDFILENAME_WAYNUM="DATAFILE_WAYNUM.csv"
+GLOBALDFILENAME_WPT = "DATAFILE_WPT.csv"
+GLOBALDFILENAME_WPTNUM = "DATAFILE_WPTNUM.csv"
+
 
 class Gui(QtGui.QMainWindow):
     """ 
@@ -104,6 +112,12 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser10.setText("PlayStop")
         self.ui.btnUser10.clicked.connect(self.iReplayStop)
 
+        self.ui.btnUser11.setText("SaveData")
+        self.ui.btnUser11.clicked.connect(self.iSaveData)
+
+        self.ui.btnUser12.setText("LoadData")
+        self.ui.btnUser12.clicked.connect(self.iLoadData)
+
        
 
     def play(self):
@@ -160,7 +174,7 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-        #self.iPrintStatusTerminal()########################################Here should be activated.
+        self.iPrintStatusTerminal()########################################Here should be activated.
         self.iSetButtonAbility()
 
         """ 
@@ -171,12 +185,27 @@ class Gui(QtGui.QMainWindow):
         if(self.rex.plan_status == 1):
             self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
                                     %(self.rex.wpt_number + 1))
+        if (self.rex.plan_status == 0 and self.rex.way_total == 0):
+            self.ui.rdoutStatus.setText("Click [Train Begin] button to start train.")
+
+
+        if (self.rex.plan_status == 2):
+            self.ui.rdoutStatus.setText("Click [Get Way Point] button to record way point. Click [Stop Recording] to stop recording.")
+        if (self.rex.plan_status == 0 and self.rex.way_total != 0 and self.rex.way_number == 0):
+            self.ui.rdoutStatus.setText("Click [Replay Wholeway] to play the whole way. Click [Save Data] to Save the data.")
+        if (self.rex.plan_status == 5):
+            self.ui.rdoutStatus.setText("Click [Play Stop] to stop")
+
 
         """###############################################
         Frank Added Here
         ###############################################"""
 
-        if (self.rex.plan_status == 2):
+        if (self.rex.plan_status == 2): 
+            self.ui.sldrBase.setProperty("value",self.rex.joint_angles_fb[0]*R2D)
+            self.ui.sldrShoulder.setProperty("value",self.rex.joint_angles_fb[1]*R2D)
+            self.ui.sldrElbow.setProperty("value",self.rex.joint_angles_fb[2]*R2D)
+            self.ui.sldrWrist.setProperty("value",self.rex.joint_angles_fb[3]*R2D)
             self.iTrain_AddOneWay()
 
 
@@ -330,7 +359,7 @@ class Gui(QtGui.QMainWindow):
         else:
             self.rex.speed = value;
             self.ui.rdoutSpeed.setText(str(100 * value) + "%")
-            self.ui.sldrSpeed.setProperty("value",value*100)        
+            self.ui.sldrSpeed.setbroperty("value",value*100)        
 
              
     def iResetPosition(self):
@@ -339,6 +368,7 @@ class Gui(QtGui.QMainWindow):
         self.iSetJointAngle(2,0)
         self.iSetJointAngle(3,0)
         self.rex.cmd_publish()
+
     def iResetTorqueAndSpeed(self):
         self.iSetTorque(0.0)
         self.iSetSpeed(0.1)
@@ -355,7 +385,7 @@ class Gui(QtGui.QMainWindow):
         self.rex.way = []
         self.rex.way_number = 0
         self.rex.way_total = 0
-        print("hello.")
+        
 
     def iTrainBegin(self):
         self.iSetTorque(0.0);
@@ -385,6 +415,8 @@ class Gui(QtGui.QMainWindow):
     """
     def iGetWayPoint(self):
         SensorData = self.iTrain_FetchSensorData()
+        currentTime = self.iGetTime_now()
+        SensorData.append(currentTime)
         self.rex.wpt.append(SensorData)
         self.rex.wpt_total = self.rex.wpt_total + 1 # Have such data point up to now.
         
@@ -500,17 +532,40 @@ class Gui(QtGui.QMainWindow):
             self.ui.btnUser5.setEnabled(True)
             self.ui.btnUser6.setEnabled(True)
 
+        """Replay way"""
+
         if (self.rex.plan_status == 0 and self.rex.way_total != 0):
             self.ui.btnUser7.setEnabled(True)
         else:
             self.ui.btnUser7.setEnabled(False)
         
+
+        """
+        replay way point.
+        """
         if (self.rex.plan_status == 0 and self.rex.wpt_total != 0):
             self.ui.btnUser8.setEnabled(True)
             self.ui.btnUser9.setEnabled(True)
         else:
             self.ui.btnUser8.setEnabled(False)
             self.ui.btnUser9.setEnabled(False)
+
+        """
+        save data.
+        """
+        if (self.rex.plan_status == 0 and self.rex.way_total != 0):
+            self.ui.btnUser11.setEnabled(True)
+        else:
+            self.ui.btnUser11.setEnabled(False)
+        
+        """
+        Load Data
+        """
+        if (self.rex.plan_status == 0):
+            self.ui.btnUser12.setEnabled(True)
+        else:
+            self.ui.btnUser12.setEnabled(False)
+
 
 
     def iPrintStatusTerminal(self):
@@ -535,6 +590,98 @@ class Gui(QtGui.QMainWindow):
     def iShowFK(self):
         P0 = self.rex.rexarm_FK(self.rex.joint_angles_fb);
 		#print(P0)
+
+
+    def iSaveData(self):
+        """
+        The data variable to save is: 
+           
+            self.wpt = []
+            self.wpt_total = 0
+            
+            self.way = []
+            self.way_total = 0
+
+        """ 
+        f = open(GLOBALDFILENAME_WAYNUM,'wt')
+        writer = csv.writer(f)
+        writer.writerow([self.rex.way_total])
+        f.close()
+
+        f = open(GLOBALDFILENAME_WAY,'wt')
+        writer = csv.writer(f)
+
+        for ii in range(self.rex.way_total):
+            writer.writerow(self.rex.way[ii])
+        f.close()
+        
+
+        f = open(GLOBALDFILENAME_WPTNUM,'wt')
+        writer = csv.writer(f)
+        writer.writerow([self.rex.wpt_total])
+        f.close()
+
+        f = open(GLOBALDFILENAME_WPT,'wt')
+        writer = csv.writer(f)
+
+        for ii in range(self.rex.wpt_total):
+            writer.writerow(self.rex.wpt[ii])
+        f.close()
+        
+        print("Saving")
+
+
+
+    def iLoadData(self):
+        """
+        the data variable to load is:
+            self.wpt = []
+            self.wpt_total = 0
+            
+            self.way = []
+            self.way_total = 0
+
+        """
+
+
+
+        self.rex.wpt = []
+        self.rex.way = []
+
+        self.rex.wpt_total = 0
+        self.rex.way_total = 0
+
+        self.rex.wpt_number = 0
+        self.rex.way_number = 0
+
+
+
+
+        datafile = open(GLOBALDFILENAME_WAY,'r')
+        datafileReader = csv.reader(datafile)
+        for ii in datafileReader:
+            ii = map(float, ii)
+            self.rex.way.append(ii)
+            self.rex.way_total = self.rex.way_total + 1
+        
+
+
+
+        datafile = open(GLOBALDFILENAME_WPT,'r')
+        datafileReader = csv.reader(datafile)
+        for ii in datafileReader:
+            ii = map(float, ii)
+            self.rex.wpt.append(ii)
+            self.rex.wpt_total = self.rex.wpt_total + 1
+        
+        print("Loading Finished.")
+
+
+
+
+
+    def iGetTime_now(self):
+        return int(time.time() * 1E6)
 
 
 def main():
