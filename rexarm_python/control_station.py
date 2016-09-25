@@ -600,9 +600,8 @@ class Gui(QtGui.QMainWindow):
 
         # TODO: set the start time when at the first waypoint!
         for i in range(0,3): 
-            t = self.rex.st - iGetTime-Now()
-            self.rex.joint_angles[i] = self.rex.cubic_coeffs[i][0]+(self.rex.cub_coeffs[i][1]*t)+
-                         (self.rex.cubic_coeffs[i][2]*(t**2))+(self.rex.cubic_coeffs[i][3]*(t**3))
+            t = self.rex.st - iGetTime_Now()
+            self.rex.joint_angles[i] = self.rex.cubic_coeffs[i][0]+(self.rex.cub_coeffs[i][1]*t)+(self.rex.cubic_coeffs[i][2]*(t**2))+(self.rex.cubic_coeffs[i][3]*(t**3))
 
     # function which calculates the coefficients for the cubic polynomial function            
     def calcCubicCoeffs(self):
@@ -630,7 +629,7 @@ class Gui(QtGui.QMainWindow):
         for i in range(0,3):
             A[i] = np.array([[1,t0[i],t0[i]**2,t0[i]**3],[0,1,2*t0[i],3*(t0[i]**2)],[1,tf[i],tf[i]**2,tf[i]**3],
                              [0,1,2*tf[i],3*(tf[i]**2)]])
-            b[i] = np.array([q0[i],v0[i],qf[i],vf[i])
+            b[i] = np.array([q0[i],v0[i],qf[i],vf[i]])
             self.rex.cubic_coeffs[i] = np.dot(np.inv(A[i]), b[i]) 
 
         ## TODO: set start time variable 'st' here?
