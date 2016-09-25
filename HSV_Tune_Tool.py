@@ -3,6 +3,7 @@
 Zhentao Xu
 HSV Tuning Tool
 Function: You can click the region of desired color, and the terminal can show the hsv range.
+		   During selection, you can click Button "u" to undo the selection.
 """
 
 import cv2
