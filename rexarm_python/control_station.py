@@ -20,8 +20,8 @@ MAX_X = 950
 
 MIN_Y = 30
 MAX_Y = 510
-GLOBALERRORTORRANCE = 2.0 / 180 * PI
-GLOBALFASTSPEED = 0.7
+GLOBALERRORTORRANCE = 5.0 / 180 * PI
+GLOBALFASTSPEED = 0.8
 GLOBALSLOWSPEED = 0.1
 
 GLOBALDFILENAME_WAY = "DATAFILE_WAY.csv"
@@ -322,9 +322,7 @@ class Gui(QtGui.QMainWindow):
     Button 1: Reset Position
     """
     def iSetJointAngle(self, jointIndex, value):
-    	self.iSetTorque(0.5)
-    	self.iSetSpeed(0.2)
-    	self.rex.cmd_publish();
+    	
     	
         if (not (jointIndex == 0 or jointIndex == 1 or jointIndex == 2 or jointIndex == 3)):
             print("Error: in iSetJointAngle(self, jointIndex, value): jointIndex should be integer in {0,1,2,3}")
@@ -368,6 +366,11 @@ class Gui(QtGui.QMainWindow):
 
              
     def iResetPosition(self):
+
+    	self.iSetTorque(0.5)
+    	self.iSetSpeed(0.2)
+    	self.rex.cmd_publish();
+
         self.iSetJointAngle(0,0)
         self.iSetJointAngle(1,0)
         self.iSetJointAngle(2,0)
@@ -473,16 +476,20 @@ class Gui(QtGui.QMainWindow):
     "Replay WPT"
 
     def iReplayWPTBegin_SLOW(self):
-        self.iSetTorque(0.5)
+
+        self.iSetTorque(0.7)
         self.iSetSpeed(GLOBALSLOWSPEED)
         self.rex.plan_status = 3
         self.rex.wpt_number = 0
+        self.calcCubicCoeffs()
 
     def iReplayWPTBegin_FAST(self):
-        self.iSetTorque(0.5)
+
+        self.iSetTorque(0.7)
         self.iSetSpeed(GLOBALFASTSPEED)
         self.rex.plan_status = 3
         self.rex.wpt_number = 0
+        self.calcCubicCoeffs()
 
         
     def iReplayWPT_GetSensorData(self):
@@ -510,6 +517,31 @@ class Gui(QtGui.QMainWindow):
             thiswptnum = self.rex.wpt_number
             target = self.rex.wpt[thiswptnum]
             arrived = self.iCheckIfArrived(target,GLOBALERRORTORRANCE)
+            
+
+            if (arrived):
+                
+                self.rex.wpt_number = self.rex.wpt_number + 1
+                self.calcCubicCoeffs()
+                print("Arrived.")
+            else:
+            	self.cubicPoly()
+                self.rex.cmd_publish()
+                print("Not Arrived Yet.")
+
+
+
+
+    """
+    def iReplayWPT_PlayOneWay(self):
+        if (self.rex.wpt_number == self.rex.wpt_total):
+            self.iReplayStop()
+        else:
+            thiswptnum = self.rex.wpt_number
+            target = self.rex.wpt[thiswptnum]
+            arrived = self.iCheckIfArrived(target,GLOBALERRORTORRANCE)
+            
+
             if (arrived):
                 self.rex.wpt_number = self.rex.wpt_number + 1
             else:
@@ -517,8 +549,14 @@ class Gui(QtGui.QMainWindow):
                 self.iSetJointAngle(1,target[1]);
                 self.iSetJointAngle(2,target[2]);
                 self.iSetJointAngle(3,target[3]);
-                self.rex.cmd_publish();
 
+                self.rex.cmd_publish();
+    """
+
+                #self.ui.sldrBase.setProperty("value",self.rex.joint_angles[0]*R2D)
+                #self.ui.sldrShoulder.setProperty("value",self.rex.joint_angles[1]*R2D)
+                #self.ui.sldrElbow.setProperty("value",self.rex.joint_angles[2]*R2D)
+                #self.ui.sldrWrist.setProperty("value",self.rex.joint_angles[3]*R2D)
 
 
 
@@ -599,23 +637,30 @@ class Gui(QtGui.QMainWindow):
     # function which sets the self.rex.joint_angles for each joint to the values
     # calculated by the cubic polynomials as a function of time
     def cubicPoly(self):
-
         if self.rex.wpt_number == self.rex.wpt_total:
             self.iReplayStop()
 
         # TODO: set the start time when at the first waypoint!
-        for i in range(0,3): 
-            t = self.rex.st - iGetTime_Now()
-            self.rex.joint_angles[i] = self.rex.cubic_coeffs[i][0]+(self.rex.cub_coeffs[i][1]*t)+(self.rex.cubic_coeffs[i][2]*(t**2))+(self.rex.cubic_coeffs[i][3]*(t**3))
-
+        for i in range(0,4): 
+            t = self.iGetTime_now() - self.rex.st 
+            print(">>>>>>>>>>>>>>>>>>"),
+            print(len(self.rex.cubic_coeffs))
+            self.rex.joint_angles[i] = (self.rex.cubic_coeffs[i])[0] # +((self.rex.cubic_coeffs[i])[1]*t)+((self.rex.cubic_coeffs[i])[2]*(t**2))+((self.rex.cubic_coeffs[i])[3]*(t**3))
+            
     # function which calculates the coefficients for the cubic polynomial function            
     def calcCubicCoeffs(self):
+
+
+
         # each array index corresponds to the joint
+
+        #TODO: Forward Kinematics + Calculate Time + Set time for moving + set tf.
+
         v0 = [0,0,0,0]
         vf = [0,0,0,0] 
         t0 = [0,0,0,0]
         tf = [1,1,1,1]
-
+        
         current_wpt = self.rex.wpt_number
         next_wpt = self.rex.wpt_number+1
 
@@ -624,6 +669,10 @@ class Gui(QtGui.QMainWindow):
         qf = [self.rex.wpt[next_wpt][0], self.rex.wpt[next_wpt][1],
               self.rex.wpt[next_wpt][2], self.rex.wpt[next_wpt][3]]
 
+        A = []
+        b = []
+        A = list()
+        b = list()
         # NOTE: format is Ax=b where A is the constant waypoint relation matrix, x is the unknown coefficients
         # and bi is the [q0,v0,qf,vf] column vector for each joint
 
@@ -631,14 +680,15 @@ class Gui(QtGui.QMainWindow):
         # A: list of 4 numpy arrays that are 4x4
         # b: list of 4 numpy arrays that are 4x1
         # self.rex.cubic_coeffs: list of 4 numpy arrays that are 4x1
-        for i in range(0,3):
-            A[i] = np.array([[1,t0[i],t0[i]**2,t0[i]**3],[0,1,2*t0[i],3*(t0[i]**2)],[1,tf[i],tf[i]**2,tf[i]**3],
-                             [0,1,2*tf[i],3*(tf[i]**2)]])
-            b[i] = np.array([q0[i],v0[i],qf[i],vf[i]])
-            self.rex.cubic_coeffs[i] = np.dot(np.inv(A[i]), b[i]) 
+        for i in range(0,4):
+            A.append(np.array([[1,t0[i],t0[i]**2,t0[i]**3],[0,1,2*t0[i],3*(t0[i]**2)],[1,tf[i],tf[i]**2,tf[i]**3],[0,1,2*tf[i],3*(tf[i]**2)]]))
+            b.append(np.array([q0[i],v0[i],qf[i],vf[i]]))
+            self.rex.cubic_coeffs[i] = np.dot(np.linalg.inv(A[i]), b[i]) 
 
+       
         ## TODO: set start time variable 'st' here?
-        self.rex.st = iGetTime-Now()
+        self.rex.st = self.iGetTime_now()
+       
 
     def iSaveData(self):
         """
