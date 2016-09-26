@@ -121,6 +121,7 @@ class Gui(QtGui.QMainWindow):
        
 
     def play(self):
+
         """ 
         Play Funtion
         Continuously called by GUI 
@@ -321,6 +322,10 @@ class Gui(QtGui.QMainWindow):
     Button 1: Reset Position
     """
     def iSetJointAngle(self, jointIndex, value):
+    	self.iSetTorque(0.5)
+    	self.iSetSpeed(0.2)
+    	self.rex.cmd_publish();
+    	
         if (not (jointIndex == 0 or jointIndex == 1 or jointIndex == 2 or jointIndex == 3)):
             print("Error: in iSetJointAngle(self, jointIndex, value): jointIndex should be integer in {0,1,2,3}")
             pass
@@ -359,7 +364,7 @@ class Gui(QtGui.QMainWindow):
         else:
             self.rex.speed = value;
             self.ui.rdoutSpeed.setText(str(100 * value) + "%")
-            self.ui.sldrSpeed.setbroperty("value",value*100)        
+            self.ui.sldrSpeed.setProperty("value",value*100)        
 
              
     def iResetPosition(self):
