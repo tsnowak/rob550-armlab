@@ -137,7 +137,7 @@ class Gui(QtGui.QMainWindow):
             print "No frame"
         
         """ 
-        Update GUI Joint Coordinates Labels
+        Update GUI Joint Coordinates Labels on Sliders
         LAB TASK: include the other slider labels 
         """
         self.ui.rdoutBaseJC.setText(str("%.2f" % (self.rex.joint_angles_fb[0]*R2D)))
@@ -179,7 +179,7 @@ class Gui(QtGui.QMainWindow):
 
         """ 
         Updates status label when rexarm playback is been executed.
-        This will be extended to includ eother appropriate messages
+        This will be extended to include other appropriate messages
         """ 
 
         if(self.rex.plan_status == 1):
@@ -208,10 +208,11 @@ class Gui(QtGui.QMainWindow):
             self.ui.sldrWrist.setProperty("value",self.rex.joint_angles_fb[3]*R2D)
             self.iTrain_AddOneWay()
 
-
+		# replay continuously recorded waypoints
         if (self.rex.plan_status == 5):
             self.iReplay_PlayOneWay()
 
+		# replay manually recorded waypoints
         if (self.rex.plan_status == 3):
             self.iReplayWPT_PlayOneWay()
 
@@ -404,6 +405,7 @@ class Gui(QtGui.QMainWindow):
                 self.rex.joint_angles_fb[2],
                 self.rex.joint_angles_fb[3] ]
 
+	# fetch list of sensor data and append to the list of waypoints continuously
     def iTrain_AddOneWay(self):
         SensorData = self.iTrain_FetchSensorData()
         self.rex.way.append(SensorData)
@@ -434,6 +436,7 @@ class Gui(QtGui.QMainWindow):
     """
     Replay
     """
+	# Begin replaying waypoints that were continuously set
     def iReplayBegin(self):
         self.iSetTorque(0.5)
         self.rex.plan_status = 5
@@ -444,6 +447,7 @@ class Gui(QtGui.QMainWindow):
 
     """
     """
+	# Stop replaying waypoints and reset waypoint number to 0
     def iReplayStop(self):
         self.rex.plan_status = 0;
         self.rex.way_number = 0;
@@ -456,6 +460,7 @@ class Gui(QtGui.QMainWindow):
         self.iSetJointAngle(3,sensorData[3])
         self.rex.cmd_publish();
 
+	# TODO: add comments
     def iReplay_PlayOneWay(self):
         if (self.rex.way_number == self.rex.way_total):
             self.iReplayStop()
@@ -467,12 +472,14 @@ class Gui(QtGui.QMainWindow):
 
     "Replay WPT"
 
+	# begin replaying manually set waypoints at a slow speed
     def iReplayWPTBegin_SLOW(self):
         self.iSetTorque(0.5)
         self.iSetSpeed(GLOBALSLOWSPEED)
         self.rex.plan_status = 3
         self.rex.wpt_number = 0
 
+	# begin replaying manually set waypoints at a fast speed
     def iReplayWPTBegin_FAST(self):
         self.iSetTorque(0.5)
         self.iSetSpeed(GLOBALFASTSPEED)
@@ -518,7 +525,7 @@ class Gui(QtGui.QMainWindow):
 
 
     """
-    Button Avalibity
+    Button Availibity
     """
     def iSetButtonAbility(self):
         if (self.rex.plan_status == 0):
@@ -601,7 +608,9 @@ class Gui(QtGui.QMainWindow):
         # TODO: set the start time when at the first waypoint!
         for i in range(0,3): 
             t = self.rex.st - iGetTime_Now()
-            self.rex.joint_angles[i] = self.rex.cubic_coeffs[i][0]+(self.rex.cub_coeffs[i][1]*t)+(self.rex.cubic_coeffs[i][2]*(t**2))+(self.rex.cubic_coeffs[i][3]*(t**3))
+            self.rex.joint_angles[i] = (self.rex.cubic_coeffs[i][0]+(self.rex.cub_coeffs[i][1]*t)+
+					(self.rex.cubic_coeffs[i][2]*(t**2))+
+					(self.rex.cubic_coeffs[i][3]*(t**3)))
 
     # function which calculates the coefficients for the cubic polynomial function            
     def calcCubicCoeffs(self):
@@ -619,21 +628,22 @@ class Gui(QtGui.QMainWindow):
         qf = [self.rex.wpt[next_wpt][0], self.rex.wpt[next_wpt][1],
               self.rex.wpt[next_wpt][2], self.rex.wpt[next_wpt][3]]
 
-        # NOTE: format is Ax=b where A is the constant waypoint relation matrix, x is the unknown coefficients
-        # and bi is the [q0,v0,qf,vf] column vector for each joint
+        # NOTE: format is Ax=b where A is the constant waypoint relation matrix,
+	# x is the unknown coefficients and bi is the [q0,v0,qf,vf] column vector 
+	# for each joint
 
         # For each joint create arrays A and b
         # A: list of 4 numpy arrays that are 4x4
         # b: list of 4 numpy arrays that are 4x1
         # self.rex.cubic_coeffs: list of 4 numpy arrays that are 4x1
         for i in range(0,3):
-            A[i] = np.array([[1,t0[i],t0[i]**2,t0[i]**3],[0,1,2*t0[i],3*(t0[i]**2)],[1,tf[i],tf[i]**2,tf[i]**3],
-                             [0,1,2*tf[i],3*(tf[i]**2)]])
+            A[i] = np.array([[1,t0[i],t0[i]**2,t0[i]**3],[0,1,2*t0[i],3*(t0[i]**2)],
+		   [1,tf[i],tf[i]**2,tf[i]**3],[0,1,2*tf[i],3*(tf[i]**2)]])
             b[i] = np.array([q0[i],v0[i],qf[i],vf[i]])
             self.rex.cubic_coeffs[i] = np.dot(np.inv(A[i]), b[i]) 
 
         ## TODO: set start time variable 'st' here?
-        self.rex.st = iGetTime-Now()
+        self.rex.st = iGetTime_now()
 
     def iSaveData(self):
         """
