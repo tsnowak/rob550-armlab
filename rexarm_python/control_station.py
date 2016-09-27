@@ -526,15 +526,15 @@ class Gui(QtGui.QMainWindow):
             arrived = self.iCheckIfArrived(target,GLOBALERRORTORRANCE)
             
 
-            if (arrived):
-                
+            if (arrived):  
                 self.rex.wpt_number = self.rex.wpt_number + 1
+                print "CURRENT WAYPOINT SENT TO CALC CUBIC"
+                print(self.rex.wpt_number),
                 self.calcCubicCoeffs()
-                print("Arrived.")
+
             else:
             	self.cubicPoly()
                 self.rex.cmd_publish()
-                print("Not Arrived Yet.")
 
 
 
@@ -651,18 +651,14 @@ class Gui(QtGui.QMainWindow):
 
         for i in range(0,4): 
             t = self.iGetTime_now() - self.rex.st 
-        	self.rex.joint_angles[i] = (self.rex.cubic_coeffs[i])[0]+((self.rex.cubic_coeffs[i])[1]*t)+((self.rex.cubic_coeffs[i])[2]*(t**2))+((self.rex.cubic_coeffs[i])[3]*(t**3))
+            self.rex.joint_angles[i] = (self.rex.cubic_coeffs[i])[0]+((self.rex.cubic_coeffs[i])[1]*t)+((self.rex.cubic_coeffs[i])[2]*(t**2))+((self.rex.cubic_coeffs[i])[3]*(t**3))
             
 
         
 
     # function which calculates the coefficients for the cubic polynomial function            
     def calcCubicCoeffs(self):
-
-
-
-        # each array index corresponds to the joint
-
+        #NOTE: each array index corresponds to the joint
         #TODO: Forward Kinematics + Calculate Time + Set time for moving + set tf.
 
         v0 = [0,0,0,0]
@@ -677,7 +673,6 @@ class Gui(QtGui.QMainWindow):
               self.rex.wpt[current_wpt][2], self.rex.wpt[current_wpt][3]]
         qf = [self.rex.wpt[next_wpt][0], self.rex.wpt[next_wpt][1],
               self.rex.wpt[next_wpt][2], self.rex.wpt[next_wpt][3]]
-
 
         A = []
         b = []
@@ -697,6 +692,7 @@ class Gui(QtGui.QMainWindow):
             b.append(np.array([q0[i],v0[i],qf[i],vf[i]]))
             self.rex.cubic_coeffs[i] = np.dot(np.linalg.inv(A[i]), b[i]) 
 
+        #set the start time used by the cubic
         self.rex.st = self.iGetTime_now()
 
     def iSaveData(self):
