@@ -429,6 +429,7 @@ class Gui(QtGui.QMainWindow):
         SensorData.append(currentTime)
         self.rex.wpt.append(SensorData)
         self.rex.wpt_total = self.rex.wpt_total + 1 # Have such data point up to now.
+        print self.rex.wpt_number
         
        
         
@@ -459,6 +460,8 @@ class Gui(QtGui.QMainWindow):
     def iReplayStop(self):
         self.rex.plan_status = 0;
         self.rex.way_number = 0;
+        self.rex.wpt_number = 0
+		### TESTING TED ADDED ### 
 
     def iReplay_SetOneSensorData(self,valueIndex):
         sensorData = self.rex.way[valueIndex]
@@ -521,8 +524,7 @@ class Gui(QtGui.QMainWindow):
         if (self.rex.wpt_number == self.rex.wpt_total):
             self.iReplayStop()
         else:
-            thiswptnum = self.rex.wpt_number
-            target = self.rex.wpt[thiswptnum]
+            target = self.rex.wpt[self.rex.wpt_number]
             arrived = self.iCheckIfArrived(target,GLOBALERRORTORRANCE)
             
 
@@ -651,7 +653,7 @@ class Gui(QtGui.QMainWindow):
 
         for i in range(0,4): 
             t = self.iGetTime_now() - self.rex.st 
-            self.rex.joint_angles[i] = (self.rex.cubic_coeffs[i])[0]+((self.rex.cubic_coeffs[i])[1]*t)+((self.rex.cubic_coeffs[i])[2]*(t**2))+((self.rex.cubic_coeffs[i])[3]*(t**3))
+            self.rex.joint_angles[i] = (self.rex.cubic_coeffs[i])[0]#+((self.rex.cubic_coeffs[i])[1]*t)+((self.rex.cubic_coeffs[i])[2]*(t**2))+((self.rex.cubic_coeffs[i])[3]*(t**3))
             
 
         
