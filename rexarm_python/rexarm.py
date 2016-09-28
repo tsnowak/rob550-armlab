@@ -19,7 +19,7 @@ FK Constant
 """
 DH1_D = 116
 DH3_A = 100
-DH4_A = 100
+DH4_A = 110
 
 
 
@@ -54,6 +54,17 @@ class Rexarm():
         self.way_number = 0
         self.way_total = 0
 
+        #Record the realtime feedback
+        
+
+        self.recfast = []
+        self.recfast_number = 0  #no use, just to keep similar to way and wpt's style.
+        self.recfast_total = 0
+
+        self.recslow = []
+        self.recslow_number = 0  #no use, just to keep similar to way and wpt's style.
+        self.recslow_total = 0
+
         # variables for the cubic polynomial fit routine
         self.cubic_coeffs = [0.0] * 4      # list of np arrays that are 4x1
         self.st = 0                 # the start time of the cubic function 
@@ -63,6 +74,8 @@ class Rexarm():
         lcmMotorSub = self.lc.subscribe("ARM_STATUS",
                                         self.feedback_handler)
 
+        self.P0 = [0] * 3;
+        self.T = 0
     def cmd_publish(self):
         """ 
         Publish the commands to the arm using LCM. 
@@ -174,13 +187,18 @@ class Rexarm():
         P3 = np.dot(R34,P4)
         P2 = np.dot(R23,P3)
         P1 = np.dot(R12,P2)
-        P0 = np.dot(R01,P1)
-        
-        return P0
+        #he point with respect to the base. in the format[[],[],[],[]]
+        Pbase = np.dot(R01,P1)
+        self.P0[0] = Pbase[0][0]
+        self.P0[1] = Pbase[1][0]
+        self.P0[2] = Pbase[2][0]
+
+        self.T =  (- 1 * (angles[1] + angles[2] + angles[3] ) - PI/2 ) * R2D;
 
 
-        pass
-    	
+
+
+
     def rexarm_IK(pose, cfg):
         """
         Calculates inverse kinematics for the rexarm

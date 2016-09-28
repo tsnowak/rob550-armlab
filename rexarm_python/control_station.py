@@ -28,6 +28,8 @@ GLOBALDFILENAME_WAY = "DATAFILE_WAY.csv"
 GLOBALDFILENAME_WAYNUM="DATAFILE_WAYNUM.csv"
 GLOBALDFILENAME_WPT = "DATAFILE_WPT.csv"
 GLOBALDFILENAME_WPTNUM = "DATAFILE_WPTNUM.csv"
+GLOBALDFILENAME_RECSLOW = "DATAFILE_RECSLOW.csv"
+GLOBALDFILENAME_RECFAST = "DATAFILE_RECFAST.csv"
 
 
 class Gui(QtGui.QMainWindow):
@@ -112,10 +114,10 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser10.setText("PlayStop")
         self.ui.btnUser10.clicked.connect(self.iReplayStop)
 
-        self.ui.btnUser11.setText("SaveData")
+        self.ui.btnUser11.setText("Save WPT Data")
         self.ui.btnUser11.clicked.connect(self.iSaveData)
 
-        self.ui.btnUser12.setText("LoadData")
+        self.ui.btnUser12.setText("Load WPT Data")
         self.ui.btnUser12.clicked.connect(self.iLoadData)
 
        
@@ -214,7 +216,7 @@ class Gui(QtGui.QMainWindow):
             self.iReplay_PlayOneWay()
 
 		# replay manually recorded waypoints
-        if (self.rex.plan_status == 3):
+        if (self.rex.plan_status == 3 or self.rex.plan_status == 4):
             self.iReplayWPT_PlayOneWay()
 
         self.iShowFK()
@@ -484,22 +486,29 @@ class Gui(QtGui.QMainWindow):
     "Replay WPT"
 
 	# begin replaying manually set waypoints at a slow speed
+    #Slow: plan_status = 3.
+
     def iReplayWPTBegin_SLOW(self):
 
         self.iSetTorque(0.7)
         self.iSetSpeed(GLOBALSLOWSPEED)
         self.rex.plan_status = 3
         self.rex.wpt_number = 0
-        self.calcCubicCoeffs()
+        self.rex.recslow_total = 0
+        self.rex.recslow = []
+        #self.calcCubicCoeffs()
 
 	# begin replaying manually set waypoints at a fast speed
+    # Fast mode: plan_status = 4.
     def iReplayWPTBegin_FAST(self):
 
         self.iSetTorque(0.7)
         self.iSetSpeed(GLOBALFASTSPEED)
-        self.rex.plan_status = 3
+        self.rex.plan_status = 4
         self.rex.wpt_number = 0
-        self.calcCubicCoeffs()
+        self.rex.recfast_total = 0
+        self.rex.recfast = []
+        #self.calcCubicCoeffs()
 
         
     def iReplayWPT_GetSensorData(self):
@@ -519,7 +528,7 @@ class Gui(QtGui.QMainWindow):
             return True
         else:
             return False
-
+    """
     def iReplayWPT_PlayOneWay(self):
         if (self.rex.wpt_number == self.rex.wpt_total):
             self.iReplayStop()
@@ -537,19 +546,30 @@ class Gui(QtGui.QMainWindow):
             else:
             	self.cubicPoly()
                 self.rex.cmd_publish()
-
-
-
-
     """
+
+
+
+    
     def iReplayWPT_PlayOneWay(self):
         if (self.rex.wpt_number == self.rex.wpt_total):
             self.iReplayStop()
         else:
-            thiswptnum = self.rex.wpt_number
-            target = self.rex.wpt[thiswptnum]
+            target = self.rex.wpt[self.rex.wpt_number]
             arrived = self.iCheckIfArrived(target,GLOBALERRORTORRANCE)
             
+            #Record one real time data into self.rex.rec list and self.rex.rec_total += 1.
+
+                #SLOW
+            if (self.rex.plan_status == 3):
+                mode = 0
+                #Fast:
+            elif (self.rex.plan_status == 4):
+                mode = 1
+            else:
+                print("Error: iReplayWPT_PlayOneWay: Undefined status.")
+
+            self.iRecord_JointAngleFB(mode);
 
             if (arrived):
                 self.rex.wpt_number = self.rex.wpt_number + 1
@@ -558,9 +578,8 @@ class Gui(QtGui.QMainWindow):
                 self.iSetJointAngle(1,target[1]);
                 self.iSetJointAngle(2,target[2]);
                 self.iSetJointAngle(3,target[3]);
-
                 self.rex.cmd_publish();
-    """
+                
 
                 #self.ui.sldrBase.setProperty("value",self.rex.joint_angles[0]*R2D)
                 #self.ui.sldrShoulder.setProperty("value",self.rex.joint_angles[1]*R2D)
@@ -634,20 +653,40 @@ class Gui(QtGui.QMainWindow):
         print(",#wpt_now="),
         print(self.rex.wpt_number),
 
+        print(",#recslow="),
+        print(self.rex.recslow_total),
+        
+        print(",#recfast="),
+        print(self.rex.recfast_total),
+        
         print("]");
 
 
 
 
     def iShowFK(self):
-        P0 = self.rex.rexarm_FK(self.rex.joint_angles_fb);
-		#print(P0)
+        self.rex.rexarm_FK(self.rex.joint_angles_fb);
+        """
+        print("[x]:"),
+        print(P0[0][0])
+        print("[y]:"),
+        print(P0[1][0])
+        print("[z]:"),
+        print(P0[2][0])
+        print("\n")
+        """
+        self.ui.rdoutX.setText(str(float("{0:.2f}".format(self.rex.P0[0] ))));
+        self.ui.rdoutY.setText(str(float("{0:.2f}".format(self.rex.P0[1] ))));
+        self.ui.rdoutZ.setText(str(float("{0:.2f}".format(self.rex.P0[2] ))));
+        self.ui.rdoutT.setText(str(float("{0:.2f}".format(self.rex.T ))));
+
 
     # function which sets the self.rex.joint_angles for each joint to the values
     # calculated by the cubic polynomials as a function of time
     def cubicPoly(self):
         if self.rex.wpt_number == self.rex.wpt_total:
             self.iReplayStop()
+            # TODO: break from function here
 
         # TODO: set the start time when at the first waypoint!
 
@@ -708,10 +747,13 @@ class Gui(QtGui.QMainWindow):
             self.way_total = 0
 
         """ 
+        
+        """
         f = open(GLOBALDFILENAME_WAYNUM,'wt')
         writer = csv.writer(f)
         writer.writerow([self.rex.way_total])
         f.close()
+        """
 
         f = open(GLOBALDFILENAME_WAY,'wt')
         writer = csv.writer(f)
@@ -720,12 +762,12 @@ class Gui(QtGui.QMainWindow):
             writer.writerow(self.rex.way[ii])
         f.close()
         
-
+        """
         f = open(GLOBALDFILENAME_WPTNUM,'wt')
         writer = csv.writer(f)
         writer.writerow([self.rex.wpt_total])
         f.close()
-
+        """
         f = open(GLOBALDFILENAME_WPT,'wt')
         writer = csv.writer(f)
 
@@ -733,6 +775,22 @@ class Gui(QtGui.QMainWindow):
             writer.writerow(self.rex.wpt[ii])
         f.close()
         
+        f = open(GLOBALDFILENAME_RECSLOW,'wt')
+        writer = csv.writer(f)
+        for ii in range(self.rex.recslow_total):
+            writer.writerow(self.rex.recslow[ii])
+        f.close()
+
+
+        f = open(GLOBALDFILENAME_RECFAST,'wt')
+        writer = csv.writer(f)
+        for ii in range(self.rex.recfast_total):
+            writer.writerow(self.rex.recfast[ii])
+        f.close()
+
+
+
+
         print("Saving")
 
 
@@ -787,6 +845,47 @@ class Gui(QtGui.QMainWindow):
 
     def iGetTime_now(self):
         return int(time.time() * 1E6)
+
+    # Record the real time joint angle feedback when replaying the way points.
+    # mdoe == 0: slow mode, 1: fast mode
+    def iRecord_JointAngleFB(self, mode):
+        if (mode == 0):
+            temp = []
+            #0: Time
+            temp.append(self.iGetTime_now())
+            #1-4: Joint angles.
+            temp.append(self.rex.joint_angles_fb[0]);
+            temp.append(self.rex.joint_angles_fb[1]);
+            temp.append(self.rex.joint_angles_fb[2]);
+            temp.append(self.rex.joint_angles_fb[3]);
+
+            #5-7: Forward kinematics.
+            temp.append(self.rex.P0[0])
+            temp.append(self.rex.P0[1])
+            temp.append(self.rex.P0[2])
+            temp.append(self.rex.T)
+
+            print(len(self.rex.recslow))
+            print(temp)
+            self.rex.recslow.append(temp)
+
+
+
+            self.rex.recslow_total = self.rex.recslow_total + 1
+        elif (mode == 1):
+            temp = []
+            temp.append(self.iGetTime_now())
+            temp.append(self.rex.joint_angles_fb[0]);
+            temp.append(self.rex.joint_angles_fb[1]);
+            temp.append(self.rex.joint_angles_fb[2]);
+            temp.append(self.rex.joint_angles_fb[3]);
+            temp.append(self.rex.P0[0])
+            temp.append(self.rex.P0[1])
+            temp.append(self.rex.P0[2])
+            temp.append(self.rex.T)
+            self.rex.recfast.append(temp)
+            print(temp)
+            self.rex.recfast_total = self.rex.recfast_total + 1
 
 
 def main():
