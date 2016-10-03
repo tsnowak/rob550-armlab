@@ -58,11 +58,13 @@ if __name__ == "__main__":
 			hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
 			cv2.imshow('Window', bgr)
-				
+			
+            # 0x1B = ESC	
 			ch = cv2.waitKey(10)
 			if ch == 0x1B:
 				break
-
+            
+            # 0x75 = u
 			if ch == 0x75:
 				if currentColor <= 3:
 					currentColor   = currentColor + 1
