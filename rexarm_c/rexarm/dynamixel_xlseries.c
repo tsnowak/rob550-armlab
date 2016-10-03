@@ -14,7 +14,7 @@
 static int
 xlseries_is_address_EEPROM(int address)
 {
-    return address <= 0x18;
+    return address < 0x18;
 }
 
 static double

@@ -40,12 +40,13 @@ dynamixel_set_id(dynamixel_device_t *device, int newid)
         if (resp == NULL || resp->len < 1 || resp->buf[0] != 0) {
             printf("set_id failed for %d. Aborting in order to avoid EEPROM wear-out.", device->id);
             exit(-1);
+        } 
+        else {
+            printf("NOTE: set_id requires power cycling the servo motor before changes fully take effect.\n");
         }
         dynamixel_msg_destroy(msg);
         dynamixel_msg_destroy(resp);
     }
-
-
 }
 
 void
@@ -114,7 +115,7 @@ dynamixel_get_firmware_version(dynamixel_device_t *device)
 
     else {        
         printf("Incorect Protocol Specified\n");
-        return NULL;
+        return -1;
     }
 
     return version;
@@ -389,7 +390,22 @@ dynamixel_ensure_EEPROM(dynamixel_device_t *device,
             printf("WRN: Write failed because EEPROM address given is in RAM area.\n");
             return NULL;
         }
-
+        
+        // Disable the torque enable message to allow writing to the EEPROM
+        dynamixel_msg_t *offMsg = dynamixel_msg_create(3);
+        offMsg->buf[0] = 0x18;
+        offMsg->buf[1] = 0x00;
+        offMsg->buf[2] = 0x00;
+        dynamixel_msg_t *offResp = device->write_to_RAM(device, offMsg, 0);
+        if (offResp == NULL) {
+            printf("Turning off torque enabled failed.\n");
+        }
+        else {
+            dynamixel_msg_destroy(offResp);
+        }
+        dynamixel_msg_destroy(offMsg);
+        
+        // Send the EEPROM command
         int num_bytes = params->len - 2;
         
         dynamixel_msg_t *msg = dynamixel_msg_create(4);
@@ -436,6 +452,22 @@ dynamixel_ensure_EEPROM(dynamixel_device_t *device,
             printf("WRN: Error occurred while writing to EEPROM");
             dynamixel_msg_dump(resp);
         }
+        
+        // After changing EEPROM, re-enable torque for motor control -- NOTE: This will fail for set-id
+        dynamixel_msg_t *onMsg = dynamixel_msg_create(3);
+        onMsg->buf[0] = 0x18;
+        onMsg->buf[1] = 0x00;
+        onMsg->buf[2] = 0x01;
+        dynamixel_msg_t* onResp = device->write_to_RAM(device, onMsg, 0);
+        if (onResp == NULL) {
+            printf("Turning on torque enabled failed.\n");
+        }
+        else {
+            dynamixel_msg_destroy(onResp);
+        }
+        
+        dynamixel_msg_destroy(onMsg);
+        
         return resp;
     }
     else{
@@ -486,7 +518,7 @@ dynamixel_read_rotation_mode(dynamixel_device_t *device)
             dynamixel_msg_destroy(resp);
             return device->rotation_mode;
         }
-        return NULL;
+        return -1;
 
     }
     return mode;

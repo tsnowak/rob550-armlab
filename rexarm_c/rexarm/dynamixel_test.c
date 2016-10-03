@@ -166,21 +166,25 @@ main(int argc, char *argv[])
                 if(!(servo->rotation_mode)){
                     /* Joint Mode */
                     printf("Enter Angle in Degrees [-180.0:180.0]: ");
-                    read(STDIN_FILENO, c, 10);   // Will block until \n received
-                    rad = to_radians(atof(c));
-                    if(fabs(atof(c)) > 180.0){
-                        printf("Angle outside limits! Commanding 0!\n");
-                        rad = 0.0;
+                    int nread = read(STDIN_FILENO, c, 10);   // Will block until \n received
+                    if(nread > 0){
+                        rad = to_radians(atof(c));
+                        if(fabs(atof(c)) > 180.0){
+                            printf("Angle outside limits! Commanding 0!\n");
+                            rad = 0.0;
+                        }
                     }
                 } 
                 else{
                     /* Wheel Mode */
                     printf("Enter Speed [-1:1]: ");
-                    read(STDIN_FILENO, c, 10);   // Will block until \n received
-                    cspeed = atof(c);
-                    if(fabs(cspeed) > 1){
-                        printf("Speed outside limits! Commanding 0!\n");
-                        cspeed = 0;
+                    int nread = read(STDIN_FILENO, c, 10);   // Will block until \n received
+                    if(nread > 0){
+                        cspeed = atof(c);
+                        if(fabs(cspeed) > 1){
+                            printf("Speed outside limits! Commanding 0!\n");
+                            cspeed = 0;
+                        }
                     }
                 }
                 printf("setting goal\n");

@@ -21,15 +21,20 @@ dynamixel_msg_create(int len)
 void
 dynamixel_msg_destroy(dynamixel_msg_t *msg)
 {
-    free(msg->buf);
-    free(msg);
+    if (msg) {
+        free(msg->buf);
+        free(msg);
+    }
 }
 
 void
 dynamixel_msg_dump(dynamixel_msg_t *msg)
 {
-    for (int i = 0; i < msg->len; i++)
-        printf("%02x ", msg->buf[i] & 0xff);
+    if (msg) {
+        for (int i = 0; i < msg->len; i++)
+            printf("%02x ", msg->buf[i] & 0xff);
+    }
+    
     printf("\n");
 }
 

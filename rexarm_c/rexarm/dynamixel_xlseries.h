@@ -1,5 +1,5 @@
-#ifndef __AXSERIES_H__
-#define __AXSERIES_H__
+#ifndef __XXSERIES_H__
+#define __XXSERIES_H__
 
 #include <stdint.h>
 #include "dynamixel_bus.h"
