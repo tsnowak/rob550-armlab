@@ -24,7 +24,6 @@ GLOBALERRORTORRANCE = 5.0 / 180 * PI
 GLOBALFASTSPEED = 0.8
 GLOBALSLOWSPEED = 0.1
 
-# file names for various recorded data files
 GLOBALDFILENAME_WAY = "../data/DATAFILE_WAY.csv"
 GLOBALDFILENAME_WAYNUM="../data/DATAFILE_WAYNUM.csv"
 GLOBALDFILENAME_WPT = "../data/DATAFILE_WPT.csv"
@@ -81,6 +80,7 @@ class Gui(QtGui.QMainWindow):
         self.ui.sldrShoulder.valueChanged.connect(self.sliderChange)
         self.ui.sldrElbow.valueChanged.connect(self.sliderChange)
         self.ui.sldrWrist.valueChanged.connect(self.sliderChange)
+        self.ui.sldrGrip1.valueChanged.connect(self.sliderChange)
         self.ui.sldrMaxTorque.valueChanged.connect(self.sliderChange)
         self.ui.sldrSpeed.valueChanged.connect(self.sliderChange)
 
@@ -232,6 +232,10 @@ class Gui(QtGui.QMainWindow):
         self.ui.rdoutShoulder.setText(str(self.ui.sldrShoulder.value()))
         self.ui.rdoutElbow.setText(str(self.ui.sldrElbow.value()))
         self.ui.rdoutWrist.setText(str(self.ui.sldrWrist.value()))
+        self.ui.rdoutGrip1.setText(str(self.ui.sldrGrip1.value()))
+        # use value of gripper2 to show load of gripper1
+        #TODO: detect the load elsewhere
+        self.ui.rdoutGrip2.setText(str(self.rex.load_fb[4]))   
         self.ui.rdoutTorq.setText(str(self.ui.sldrMaxTorque.value()) + "%")
         self.ui.rdoutSpeed.setText(str(self.ui.sldrSpeed.value()) + "%")
         self.rex.max_torque = self.ui.sldrMaxTorque.value()/100.0
@@ -240,7 +244,7 @@ class Gui(QtGui.QMainWindow):
         self.rex.joint_angles[1] = self.ui.sldrShoulder.value()*D2R
         self.rex.joint_angles[2] = self.ui.sldrElbow.value()*D2R
         self.rex.joint_angles[3] = self.ui.sldrWrist.value()*D2R
-
+        self.rex.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
         self.rex.cmd_publish()
 
     def mousePressEvent(self, QMouseEvent):
