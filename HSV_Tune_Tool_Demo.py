@@ -9,7 +9,12 @@ Function: You can click the region of desired color, and the terminal can show t
 import cv2
 import numpy as np
 
-
+# FINAL THRESHOLD VALUES
+# light blue: 	min[88 63 95] 		max[104 178 209]
+# dark blue: 	min[105 111 43] 	max[113 181 92]
+# orange: 	min[5 157 166] 		max[7 237 255]
+# yellow:	min[17 165 159]		max[30 218 255]
+# green: 	min[48 149 100]		max[56 174 187]
 ColorRange =[]
 ColorRange.append([[17,179,184],[30,219,255]])
 ColorRange.append([[4,158,162],[7,243,255]])

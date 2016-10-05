@@ -15,9 +15,11 @@ class Video():
         corners of the base board. Use more for better calibration.
         Note that OpenCV requires float32 arrays
         """
-        self.aff_npoints = 3
-        self.real_coord = np.float32([[0., 0.], [305.,-305.], [-305.,-305.]])
-        self.mouse_coord = np.float32([[0.0, 0.0],[0.0, 0.0],[0.0, 0.0]])      
+        self.aff_npoints = 6
+	# center, pos. y, pos. x., neg. y, neg. x, 15cm 15cm (bot right)
+	# labeled on table, 1-6
+        self.real_coord = np.float32([[0., 0.], [0.,280.], [280.,0.],[0.,-280.],[-280.,0.],[150.,150.]])
+        self.mouse_coord = np.float32([[0.0, 0.0],[0.0, 0.0],[0.0, 0.0],[0.0, 0.0],[0.0, 0.0],[0.0, 0.0]])      
         self.mouse_click_id = 0
         self.aff_flag = 0
         self.aff_matrix = np.float32((2,3))
@@ -28,7 +30,7 @@ class Video():
         """
         ret, frame=self.capture.read()
         if(ret==True):
-            self.currentFrame=cv2.cvtColor(frame, cv2.COLOR_BAYER_GB2BGR)
+            self.currentFrame=cv2.cvtColor(frame, cv2.COLOR_BAYER_GR2RGB)
 
     def convertFrame(self):
         """ Converts frame to format suitable for QtGui  """
@@ -58,6 +60,59 @@ class Video():
         Implement your color blob detector here.  
         You will need to detect 5 different color blobs
         """
+	r2_kernel = np.ones((2,2),np.uint8)
+        r3_kernel = np.ones((3,3),np.uint8)
+        r4_kernel = np.ones((4,4),np.uint8)
+
+	# lb, db, o, y, g
+	lower_thresh = [np.array([88,63,95]),np.array([105,111,43]),np.array([5,157,166]),np.array([17,165,159]),np.array([48,149,100])]
+	upper_thresh = [np.array([104,178,209]),np.array([113,181,92]),np.array([7,237,255]),np.array([30,218,255]),np.array([56,174,187])]
+	#switch to 1 as each pokemon location is acquired
+	acquired = [0,0,0,0,0]
+	# note: initialized locations as x,y tuples. MIGHT NEED TO DO LIST OF LISTS
+	location = [(0,0),(0,0),(0,0),(0,0),(0,0)]
+	
+	# loop over pokemon
+	for i in range(0,5):
+		# while we haven't acquired a pokemons location
+		print "Acquiring location ",
+		print i+1
+		while acquired[i] != 1:
+			self.captureNextFrame()
+			#change current frame of color BAYER_GB2BGR to
+			hsv = cv2.cvtColor(self.currentFrame, cv2.COLOR_RGB2HSV)
+
+			# apply various filters to binary mask
+                        mask = cv2.inRange(hsv, lower_thresh[i], upper_thresh[i])
+                        open_1 = cv2.morphologyEx(mask, cv2.MORPH_OPEN, r2_kernel)
+                        close_1 = cv2.morphologyEx(open_1, cv2.MORPH_CLOSE, r3_kernel)
+                        open_2 = cv2.morphologyEx(close_1, cv2.MORPH_OPEN, r4_kernel)
+                        close_2 = cv2.morphologyEx(open_2, cv2.MORPH_CLOSE, r4_kernel)
+                        thresh = close_2.copy()
+                        #cpy = close_2.copy()
+                        _, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+                        # run through each contour detected and assume the contour is 
+			# the pokemon if it is of radius 17 > x > 28
+                        for cnt in contours:
+                                (x,y),radius = cv2.minEnclosingCircle(cnt)
+                                center = (int(x),int(y))
+                                radius = int(radius)
+                                #cv2.drawContours(cpy, contours, -1, (255,255,255), 3)
+                                #cv2.circle(cpy,center,radius,(255,255,255),2)
+				if radius > 17 and radius < 28:
+					location[i] = center
+					acquired[i] = 1
+					print "Pokemon: ",
+					print i,
+                                	print "\tRadius: ",
+                                	print radius,
+                                	print "\tCenter: ",
+                                	print center
+
+	print "Coordinates of pokemon in pixel frame"
+	print location
+
 
     """
     Begin Ted's affine transform
@@ -95,15 +150,15 @@ class Video():
         A_T = np.transpose(A)
 
         C = np.dot(np.dot((np.linalg.inv(np.dot(A_T,A))), A_T), B) 
-
+	
         """
         Here we simply verify that the affine transform was correctly found
         """
-        if np.allclose(np.dot(A,C), B):
-            print 'Successfully found affine transform!'
-        else: 
-            print 'Failed to find affine transform!'
-            return
+        #if np.allclose(np.dot(A,C), B):
+        #    print 'Successfully found affine transform!'
+        #else: 
+        #    print 'Failed to find affine transform!'
+        #    return
 
         C_resize = np.reshape(C, (2, 3))
 

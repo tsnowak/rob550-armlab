@@ -133,9 +133,9 @@ class Gui(QtGui.QMainWindow):
         """ Renders the Video Frame """
         try:
             self.video.captureNextFrame()
-            self.video.blobDetector()
+            #self.video.blobDetector()
             self.ui.videoFrame.setPixmap(
-                self.video.convertFrame())
+            self.video.convertFrame())
             self.ui.videoFrame.setScaledContents(True)
         except TypeError:
             print "No frame"
@@ -263,8 +263,17 @@ class Gui(QtGui.QMainWindow):
         """ Change coordinates to image axis """
         self.last_click[0] = x - MIN_X
         self.last_click[1] = y - MIN_Y
-       
-        """ If affine calibration is been performed """
+
+	### TESTING BLOB DETECTION TESTING ###
+	#self.video.blobDetector()
+	### TESTING BLOB DETECTION TESTING ###
+
+	# if aff_flag is 2, affine transform has been performed
+	if (self.video.aff_flag == 2):	
+                ik_wcoords = np.dot(self.video.aff_matrix, np.array([[x],[y],[1]]))
+		self.iTestIK(ik_wcoords[0], ik_wcoords[1], 40)	
+ 
+        """ If affine calibration is being performed """
         if (self.video.aff_flag == 1):
             """ Save last mouse coordinate """
             self.video.mouse_coord[self.video.mouse_click_id] = [(x-MIN_X),

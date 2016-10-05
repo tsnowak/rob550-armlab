@@ -21,17 +21,68 @@ def push_hsv_value(hsv,x,y):
 	#print(hsv_history)
 
 def recalculate_hsv_lower():
-	lower_blue[0] =  min(a for (a,b,c) in hsv_history)
-	lower_blue[1] =  min(b for (a,b,c) in hsv_history)
-	lower_blue[2] =  min(c for (a,b,c) in hsv_history)
+	#lower_blue[0] =  min(a for (a,b,c) in hsv_history)
+	#lower_blue[1] =  min(b for (a,b,c) in hsv_history)
+	#lower_blue[2] =  min(c for (a,b,c) in hsv_history)
+	
+	# Light Blue
+	lower_blue[0] = 88
+	lower_blue[1] = 63
+	lower_blue[2] = 95
+
+	# Dark Blue
+	#lower_blue[0] = 105 
+	#lower_blue[1] = 111 	
+	#lower_blue[2] = 43
+
+	# Orange
+	#lower_blue[0] = 5
+	#lower_blue[1] = 157	
+	#lower_blue[2] = 166
+
+	# Yellow
+	#lower_blue[0] = 17 
+	#lower_blue[1] = 165	
+	#lower_blue[2] = 159
+
+	#Green
+	#lower_blue[0] = 48
+	#lower_blue[1] = 149	
+	#lower_blue[2] = 100
+
 	return lower_blue
 
 
-
 def recalculate_hsv_upper():
-	upper_blue[0] =  max(a for (a,b,c) in hsv_history)
-	upper_blue[1] =  max(b for (a,b,c) in hsv_history)
-	upper_blue[2] =  max(c for (a,b,c) in hsv_history)
+	#upper_blue[0] =  max(a for (a,b,c) in hsv_history)
+	#upper_blue[1] =  max(b for (a,b,c) in hsv_history)
+	#upper_blue[2] =  max(c for (a,b,c) in hsv_history)
+	
+	# Light Blue
+	upper_blue[0] = 104
+	upper_blue[1] = 178
+	upper_blue[2] = 209
+
+	# Dark Blue
+	#upper_blue[0] = 113
+	#upper_blue[1] = 181	
+	#upper_blue[2] = 92 
+
+	# Orange
+	#upper_blue[0] = 7
+	#upper_blue[1] = 237	
+	#upper_blue[2] = 255
+
+	# Yellow
+	#upper_blue[0] = 30
+	#upper_blue[1] = 218	
+	#upper_blue[2] = 255
+
+	#Green
+	#upper_blue[0] = 56
+	#upper_blue[1] = 174	
+	#upper_blue[2] = 187
+
 	return upper_blue
 
 def mouse_callback(event, x,y,flags, param):
@@ -52,8 +103,8 @@ if __name__ == "__main__":
 
 
 	cap = cv2.VideoCapture(0)
-	cap.set(3,800)
-	cap.set(4,600)
+	cap.set(3,1280)
+	cap.set(4,960)
 
     # switch between opening filter output and simple B/W mask output
 	filter_switch = False
@@ -87,7 +138,7 @@ if __name__ == "__main__":
 			rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 			hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
-			cv2.imshow('Window', bgr)
+			cv2.imshow('Window', hsv)
 				
 			ch = cv2.waitKey(10)
             # 0x1B = ESC
@@ -126,6 +177,10 @@ if __name__ == "__main__":
 				radius = int(radius)
 				cv2.drawContours(cpy, contours, -1, (255,255,255), 3)
 				cv2.circle(cpy,center,radius,(255,255,255),2)
+				print "Radius: ",
+				print radius,
+				print "\tCenter: ",
+				print center
 			#circle_switch = True
 			#print "Circle Status: ",
 			#print circle_switch
