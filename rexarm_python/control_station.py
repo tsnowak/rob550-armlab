@@ -7,6 +7,9 @@ from rexarm import Rexarm
 import csv
 import time
 
+from State import StateManager
+from State import State_MoveToFinalTarget
+
 from video import Video
 
 """ Radians to/from  Degrees conversions """
@@ -47,6 +50,13 @@ class Gui(QtGui.QMainWindow):
         self.rex = Rexarm(self.ui)
         self.video = Video(cv2.VideoCapture(0))
 
+        """
+        Zhentao Added Here.
+        Initialize the statemachine.
+        """
+
+        self.statemanager = StateManager(self.rex);
+        print(StateManager)
         """ Other Variables """
         self.last_click = np.float32([0,0])
 
@@ -93,6 +103,13 @@ class Gui(QtGui.QMainWindow):
         #This is needed.
         self.ui.btnUser1.setText("Affine Calibration")
         self.ui.btnUser1.clicked.connect(self.affine_cal)
+        
+        self.ui.btnUser2.setText("SM Test")
+        self.ui.btnUser2.clicked.connect(self.iTestSM)
+        
+        self.ui.btnUser3.setText("Reset Position")
+        self.ui.btnUser3.clicked.connect(self.rex.iResetPosition)
+
         """
         
         self.ui.btnUser2.setText("STEP1: Reset Position")
@@ -178,8 +195,8 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-        self.iPrintStatusTerminal()########################################Here should be activated.
-        self.iSetButtonAbility()
+#        self.iPrintStatusTerminal()########################################Here should be activated.
+#        self.iSetButtonAbility()
 
         """ 
         Updates status label when rexarm playback is been executed.
@@ -344,18 +361,7 @@ class Gui(QtGui.QMainWindow):
     
     
     
-             
-    def iResetPosition(self):
-
-    	self.rex.iSetTorque(0.5)
-    	self.rex.iSetSpeed(0.2)
-    	self.rex.cmd_publish();
-
-        self.rex.iSetJointAngle(0,0)
-        self.rex.iSetJointAngle(1,0)
-        self.rex.iSetJointAngle(2,0)
-        self.rex.iSetJointAngle(3,0)
-        self.rex.cmd_publish()
+    
 
     def iResetTorqueAndSpeed(self):
         self.rex.iSetTorque(0.0)
@@ -877,6 +883,16 @@ class Gui(QtGui.QMainWindow):
             self.rex.cmd_publish();
         else:
             print("[Msg]: IK is not reachable.")
+
+
+
+
+    """
+    State manager Testing.
+    """
+    def iTestSM(self):
+        self.statemanager.StateManager_Test();
+
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = Gui()

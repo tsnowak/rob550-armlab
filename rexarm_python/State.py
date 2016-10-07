@@ -34,8 +34,11 @@ ERROR_LOCAL_TOL_T = PI/40
 class StateManager():
     def __init__(self, rexarm):
         self.rexarm = rexarm
-        State_MoveToFinalTarget state_MTFT(rexarm);
-        state_MTFT.finaltarget = [152,224,36,(35+90)*D2R]
+        self.state_MTFT = State_MoveToFinalTarget(rexarm);
+    
+    def StateManager_Test(self):
+        self.state_MTFT.finaltarget = [152,224,36,(35+90)*D2R]
+        self.state_MTFT.state_MTFT_iMoveArmToFinalLocation();
 
 
 
@@ -47,8 +50,8 @@ class State_MoveToFinalTarget():
     """
     def __init__(self,rexarm):
         self.intermediatelocation = []
-        self.finaltarget = finaltarget
-        
+        self.finaltarget  = [0.0]*4  #The data structure is [x,y,z,T]
+        self.rexarm = rexarm
         
 
 
@@ -76,4 +79,22 @@ class State_MoveToFinalTarget():
         self.intermediatelocation.append(intermediatelocation);
 
     def state_MTFT_iMoveArmToFinalLocation(self):
-        self.rexarm.
+        IK_return = self.rexarm.rexarm_IK(self.finaltarget,0)
+        validity_1 = IK_return[0]
+        validity_2 = IK_return[2]
+        validity_3 = IK_return[4]
+        validity_4 = IK_return[6]
+        configuration_1 = IK_return[1]
+        configuration_2 = IK_return[3]
+        configuration_3 = IK_return[5]
+        configuration_4 = IK_return[7]
+
+        #TODO: Do the configuration selection.
+
+        self.rexarm.iSetJointAngle(0,configuration_1[0])
+        self.rexarm.iSetJointAngle(1,configuration_1[1])
+        self.rexarm.iSetJointAngle(2,configuration_1[2])
+        self.rexarm.iSetJointAngle(3,configuration_1[3])
+
+        self.rexarm.cmd_publish();
+        

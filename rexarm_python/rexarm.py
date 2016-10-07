@@ -311,7 +311,8 @@ class Rexarm():
         configuration_3 = [ self.rexarm_IK_helper(configuration_1[0] + PI) , -configuration_1[1],-configuration_1[2],-configuration_1[3]]
         configuration_4 = [ self.rexarm_IK_helper(configuration_2[0] + PI) , -configuration_2[1],-configuration_2[2],-configuration_2[3]]
 
-        return 1,configuration_1, configuration_2, configuration_3, configuration_4
+        return [1,configuration_1,1, configuration_2, 1,configuration_3, 1,configuration_4]
+        
 
 
         """
@@ -428,3 +429,18 @@ class Rexarm():
             self.speed = value;
             self.ui.rdoutSpeed.setText(str(100 * value) + "%")
             self.ui.sldrSpeed.setProperty("value",value*100)        
+
+    """
+    Reset the position of all rexarm to be zero.
+    """
+    def iResetPosition(self):
+
+        self.iSetTorque(0.5)
+        self.iSetSpeed(0.2)
+        self.cmd_publish();
+
+        self.iSetJointAngle(0,0)
+        self.iSetJointAngle(1,0)
+        self.iSetJointAngle(2,0)
+        self.iSetJointAngle(3,0)
+        self.cmd_publish()
