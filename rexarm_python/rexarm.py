@@ -222,6 +222,64 @@ class Rexarm():
         else:
             return False
 
+    
+    """
+    The helper function for rexarm_IK, used to see if the angle will have mechanial constrain.
+    If there is, return False, else return True.
+    """
+
+    def rexarm_IK_ValidityTesthelper(self, configuration):
+
+        if configuration[0] < -179.99*D2R or configuration[0] > 179.99*D2R:
+            return False
+
+        if configuration[1] > 125.8*D2R or configuration[1] < -124.3*D2R:
+            return False
+
+        if configuration[2] > 125.8*D2R or configuration[2] < -124.3*D2R:
+            return False
+
+        if configuration[3] > 128.9*D2R or configuration[3] < -125.39*D2R:
+            return False
+
+        return True
+
+    
+    """
+        An optional function. Used to calculate the catching angle. So that the caching effect is best.
+        Input: location = [x,y,z]
+        Output: tilting angle \phi
+        TODO: Really need to be optimized when do the testing.
+    """
+    def rexarm_IK_CatchAnglePlaner(self,location):   #The data structure of location is [x,y,z]
+        x = location[0]
+        y = location[1]
+        z = location[2]
+        r = math.sqrt(x**2 + y**2)
+
+        """
+
+        |Angle[Rad]
+        |(50,PI/2 + 122 * D2R)
+        |\ 
+        | \ 
+        |  \ 
+        |   ----\(150,PI)
+        |(125,PI)\ 
+        |         \ 
+        |          \ 
+        |           \(280,PI/2+22*D2R)
+        -----------------------------> r[mm]
+        """
+        if (r <= 125):
+            return (r - 50) * (PI/2 -122 *D2R)*1.0/(125-50) + PI/2 + 122 * D2R
+        if (r < 150):
+            return PI
+
+        if (r >= 150):
+            return PI + (r - 150) * (22 * D2R - PI/2) / (130);
+
+
     """
     Name: rexarm_IK
     Input: pose: 4 x 1 tuple: [x, y, z, phi], the target location and orientation.
@@ -272,12 +330,12 @@ class Rexarm():
         if (self.CosSinRangeCheck((L2**2 + L3**2 - L_SW**2) *1.0 / (2 * L2 * L3))):
             Angle_WES = math.acos((L2**2 + L3**2 - L_SW**2) *1.0 / (2 * L2 * L3))
         else:
-            return 0,0,0,0,0
+            return [0,0,0,0,0,0,0,0]
         
         if (self.CosSinRangeCheck((L_SW **2 + L2**2  - L3**2) / (2 * L2 * L_SW))):
             Angle_WSE = math.acos((L_SW **2 + L2**2  - L3**2) / (2 * L2 * L_SW))
         else:
-            return 0,0,0,0,0
+            return [0,0,0,0,0,0,0,0]
 
         Angle_SWE = PI - Angle_WES - Angle_WSE
 
@@ -311,8 +369,29 @@ class Rexarm():
         configuration_3 = [ self.rexarm_IK_helper(configuration_1[0] + PI) , -configuration_1[1],-configuration_1[2],-configuration_1[3]]
         configuration_4 = [ self.rexarm_IK_helper(configuration_2[0] + PI) , -configuration_2[1],-configuration_2[2],-configuration_2[3]]
 
-        return [1,configuration_1,1, configuration_2, 1,configuration_3, 1,configuration_4]
-        
+
+        """
+        Check validity for each configuration.
+        """
+        validity_1 = self.rexarm_IK_ValidityTesthelper(configuration_1)
+        validity_2 = self.rexarm_IK_ValidityTesthelper(configuration_2)
+        validity_3 = self.rexarm_IK_ValidityTesthelper(configuration_3)
+        validity_4 = self.rexarm_IK_ValidityTesthelper(configuration_4)
+        #print([configuration_1[0]*R2D,configuration_1[1]*R2D,configuration_1[2]*R2D,configuration_1[3]*R2D])
+
+#        print([configuration_2[0]*R2D,configuration_2[1]*R2D,configuration_2[2]*R2D,configuration_2[3]*R2D])
+
+#        print([configuration_3[0]*R2D,configuration_3[1]*R2D,configuration_3[2]*R2D,configuration_3[3]*R2D])
+
+ #       print([configuration_4[0]*R2D,configuration_4[1]*R2D,configuration_4[2]*R2D,configuration_4[3]*R2D])
+        print("[IK]: validity:"),
+        print(validity_1), 
+        print(validity_2),
+        print(validity_3),
+        print(validity_4)
+
+        return [validity_1,configuration_1,validity_2, configuration_2, validity_3,configuration_3, validity_4,configuration_4]
+
 
 
         """

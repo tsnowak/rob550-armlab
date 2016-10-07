@@ -35,7 +35,7 @@ class StateManager():
     def __init__(self, rexarm):
         self.rexarm = rexarm
         self.state_MTFT = State_MoveToFinalTarget(rexarm);
-    
+        
     def StateManager_Test(self):
         self.state_MTFT.finaltarget = [152,224,36,(35+90)*D2R]
         self.state_MTFT.state_MTFT_iMoveArmToFinalLocation();

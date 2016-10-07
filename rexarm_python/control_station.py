@@ -290,7 +290,7 @@ class Gui(QtGui.QMainWindow):
             
             ik_wcoords = np.dot(self.video.aff_matrix, np.array([[x-MIN_X],[y-MIN_Y],[1]]))
            
-            self.iTestIK(ik_wcoords[0], ik_wcoords[1], 100,3*PI/4)	
+            self.iTestIK(ik_wcoords[0], ik_wcoords[1], 40,4*PI/4)	
  
         """ If affine calibration is being performed """
         if (self.video.aff_flag == 1):
@@ -873,9 +873,12 @@ class Gui(QtGui.QMainWindow):
     A function to test the IK, not need for final competition.
     """
     def iTestIK(self,x,y,z,phi):
+        phi = self.rex.rexarm_IK_CatchAnglePlaner([x,y,z])
+        
         print("[Msg]: IK is called.")
-        validity, IK_conf_1, IK_conf_2, IK_conf_3, IK_conf_4 = self.rex.rexarm_IK([x,y,z,phi],1);
-        if (validity):
+        [validity_1, IK_conf_1, validity_2, IK_conf_2, validity_3,IK_conf_3,validity_4, IK_conf_4] = self.rex.rexarm_IK([x,y,z,phi],1);
+
+        if (validity_1):
             self.rex.iSetJointAngle(0,  IK_conf_1[0]);
             self.rex.iSetJointAngle(1,  IK_conf_1[1]);
             self.rex.iSetJointAngle(2,  IK_conf_1[2]);
