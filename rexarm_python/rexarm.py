@@ -22,7 +22,10 @@ DH3_A = 100
 DH4_A = 110
 
 
-
+L1 = DH1_D
+L2 = DH3_A
+L3 = DH3_A
+L4 = DH4_A
 
 """ Rexarm Class """
 class Rexarm():
@@ -230,6 +233,7 @@ class Rexarm():
             3. Configuration_2: The first configuration, Elbow is Down, and face to x-positive
             4. Configuration_3: The first configuration, Elbow is Up, and face to x-negative
             5. Configuration_4: The first configuration, Elbow is Down, and face to x-nagative.
+            Note: each configuration is an 4 x 1 tuple, which represent the command for four servos.
     """
 
     def rexarm_IK(self, pose, cfg):

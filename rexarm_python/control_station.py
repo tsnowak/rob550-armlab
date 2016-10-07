@@ -269,9 +269,11 @@ class Gui(QtGui.QMainWindow):
 	### TESTING BLOB DETECTION TESTING ###
 
 	# if aff_flag is 2, affine transform has been performed
-	if (self.video.aff_flag == 2):	
-                ik_wcoords = np.dot(self.video.aff_matrix, np.array([[x],[y],[1]]))
-		self.iTestIK(ik_wcoords[0], ik_wcoords[1], 40)	
+        if (self.video.aff_flag == 2):
+            
+            ik_wcoords = np.dot(self.video.aff_matrix, np.array([[x-MIN_X],[y-MIN_Y],[1]]))
+           
+            self.iTestIK(ik_wcoords[0], ik_wcoords[1], 100,3*PI/4)	
  
         """ If affine calibration is being performed """
         if (self.video.aff_flag == 1):
@@ -331,6 +333,7 @@ class Gui(QtGui.QMainWindow):
         and updates the status text label 
         """
         self.video.aff_flag = 1 
+        self.video.mouse_click_id = 0
         self.ui.rdoutStatus.setText("Affine Calibration: Click Point %d" 
                                     %(self.video.mouse_click_id + 1))
  
@@ -900,8 +903,20 @@ class Gui(QtGui.QMainWindow):
             self.rex.recfast.append(temp)
             print(temp)
             self.rex.recfast_total = self.rex.recfast_total + 1
-
-
+    """
+    A function to test the IK, not need for final competition.
+    """
+    def iTestIK(self,x,y,z,phi):
+        print("[Msg]: IK is called.")
+        validity, IK_conf_1, IK_conf_2, IK_conf_3, IK_conf_4 = self.rex.rexarm_IK([x,y,z,phi],1);
+        if (validity):
+            self.iSetJointAngle(0,  IK_conf_1[0]);
+            self.iSetJointAngle(1,  IK_conf_1[1]);
+            self.iSetJointAngle(2,  IK_conf_1[2]);
+            self.iSetJointAngle(3,  IK_conf_1[3]);
+            self.rex.cmd_publish();
+        else:
+            print("[Msg]: IK is not reachable.")
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = Gui()
