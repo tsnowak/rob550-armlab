@@ -90,8 +90,11 @@ class Gui(QtGui.QMainWindow):
         """ Connect Buttons to Functions 
         LAB TASK: NAME AND CONNECT BUTTONS AS NEEDED
         """
+        #This is needed.
         self.ui.btnUser1.setText("Affine Calibration")
         self.ui.btnUser1.clicked.connect(self.affine_cal)
+
+        """
         self.ui.btnUser2.setText("STEP1: Reset Position")
         self.ui.btnUser2.clicked.connect(self.iResetPosition)
         self.ui.btnUser3.clicked.connect(self.iResetTorqueAndSpeed)
@@ -111,16 +114,13 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser8.setText("Replay WayPoint(FAST)")
         self.ui.btnUser9.clicked.connect(self.iReplayWPTBegin_SLOW)
         self.ui.btnUser9.setText("Replay WayPoint(SLOW)")
-
         self.ui.btnUser10.setText("PlayStop")
         self.ui.btnUser10.clicked.connect(self.iReplayStop)
-
         self.ui.btnUser11.setText("Save WPT Data")
         self.ui.btnUser11.clicked.connect(self.iSaveData)
-
         self.ui.btnUser12.setText("Load WPT Data")
         self.ui.btnUser12.clicked.connect(self.iLoadData)
-
+        """
        
 
     def play(self):
@@ -178,8 +178,8 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-        self.iPrintStatusTerminal()########################################Here should be activated.
-        self.iSetButtonAbility()
+        #self.iPrintStatusTerminal()########################################Here should be activated.
+        #self.iSetButtonAbility()
 
         """ 
         Updates status label when rexarm playback is been executed.
