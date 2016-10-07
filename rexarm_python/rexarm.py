@@ -29,8 +29,8 @@ L4 = DH4_A
 
 """ Rexarm Class """
 class Rexarm():
-    def __init__(self):
-
+    def __init__(self,ui):
+        self.ui = ui;
         """ Commanded Values """
         self.num_joints = 6
         self.joint_angles = [0.0] * self.num_joints # radians
@@ -382,3 +382,49 @@ class Rexarm():
         returns true if no collision occurs
         """
         pass 
+
+
+    def iSetJointAngle(self, jointIndex, value):
+        
+        
+        if (not (jointIndex == 0 or jointIndex == 1 or jointIndex == 2 or jointIndex == 3)):
+            print("Error: in iSetJointAngle(self, jointIndex, value): jointIndex should be integer in {0,1,2,3}")
+            pass
+        elif (not (value <= PI and value >= - PI)):
+            print("Error: in iSetJointAngle(self, jointIndex, value): value should be from - PI to PI")
+            pass
+        else:
+            self.joint_angles[jointIndex] = value
+            if (jointIndex == 0):
+                self.ui.sldrBase.setProperty("value",0)
+            elif (jointIndex == 1):
+                self.ui.sldrShoulder.setProperty("value",0)
+            elif (jointIndex == 2):
+                self.ui.sldrElbow.setProperty("value",0)
+            elif (jointIndex == 3):
+                self.ui.sldrWrist.setProperty("value",0)
+            else:
+                print("iSetJointAngle(self,joitnIndex,value): Unexpected jointIndex value.")
+                pass
+    """
+    Reset Torque and Speed
+    """
+    def iSetTorque(self, value):
+        if (not(value >= 0 and value <= 1)):
+            print("ERROR: In iSetTorque(self, value): value should be in range [0,1]");
+            pass
+        else:
+            self.max_torque = value;
+            self.ui.rdoutTorq.setText(str(100 * value) + "%")
+            self.ui.sldrMaxTorque.setProperty("value",value*100)        
+    """
+    Set the speed to desired value.
+    """ 
+    def iSetSpeed(self, value):
+        if (not(value >= 0 and value <= 1)):
+            print("ERROR: In iSetSpeed(self, value): value should be in range [0,1]");
+            pass
+        else:
+            self.speed = value;
+            self.ui.rdoutSpeed.setText(str(100 * value) + "%")
+            self.ui.sldrSpeed.setProperty("value",value*100)        

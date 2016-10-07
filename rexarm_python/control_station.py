@@ -44,7 +44,7 @@ class Gui(QtGui.QMainWindow):
         self.ui.setupUi(self)
 
         """ Main Variables Using Other Classes"""
-        self.rex = Rexarm()
+        self.rex = Rexarm(self.ui)
         self.video = Video(cv2.VideoCapture(0))
 
         """ Other Variables """
@@ -93,8 +93,8 @@ class Gui(QtGui.QMainWindow):
         #This is needed.
         self.ui.btnUser1.setText("Affine Calibration")
         self.ui.btnUser1.clicked.connect(self.affine_cal)
-
         """
+        
         self.ui.btnUser2.setText("STEP1: Reset Position")
         self.ui.btnUser2.clicked.connect(self.iResetPosition)
         self.ui.btnUser3.clicked.connect(self.iResetTorqueAndSpeed)
@@ -120,8 +120,8 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser11.clicked.connect(self.iSaveData)
         self.ui.btnUser12.setText("Load WPT Data")
         self.ui.btnUser12.clicked.connect(self.iLoadData)
+        
         """
-       
 
     def play(self):
 
@@ -178,8 +178,8 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-        #self.iPrintStatusTerminal()########################################Here should be activated.
-        #self.iSetButtonAbility()
+        self.iPrintStatusTerminal()########################################Here should be activated.
+        self.iSetButtonAbility()
 
         """ 
         Updates status label when rexarm playback is been executed.
@@ -341,65 +341,25 @@ class Gui(QtGui.QMainWindow):
     """
     Button 1: Reset Position
     """
-    def iSetJointAngle(self, jointIndex, value):
-    	
-    	
-        if (not (jointIndex == 0 or jointIndex == 1 or jointIndex == 2 or jointIndex == 3)):
-            print("Error: in iSetJointAngle(self, jointIndex, value): jointIndex should be integer in {0,1,2,3}")
-            pass
-        elif (not (value <= PI and value >= - PI)):
-            print("Error: in iSetJointAngle(self, jointIndex, value): value should be from - PI to PI")
-            pass
-        else:
-            self.rex.joint_angles[jointIndex] = value
-            if (jointIndex == 0):
-                self.ui.sldrBase.setProperty("value",0)
-            elif (jointIndex == 1):
-                self.ui.sldrShoulder.setProperty("value",0)
-            elif (jointIndex == 2):
-                self.ui.sldrElbow.setProperty("value",0)
-            elif (jointIndex == 3):
-                self.ui.sldrWrist.setProperty("value",0)
-            else:
-                print("iSetJointAngle(self,joitnIndex,value): Unexpected jointIndex value.")
-                pass
-    """
-    Button 2: Reset Torque and Speed
-    """
-    def iSetTorque(self, value):
-        if (not(value >= 0 and value <= 1)):
-            print("ERROR: In iSetTorque(self, value): value should be in range [0,1]");
-            pass
-        else:
-            self.rex.max_torque = value;
-            self.ui.rdoutTorq.setText(str(100 * value) + "%")
-            self.ui.sldrMaxTorque.setProperty("value",value*100)        
-
-    def iSetSpeed(self, value):
-        if (not(value >= 0 and value <= 1)):
-            print("ERROR: In iSetSpeed(self, value): value should be in range [0,1]");
-            pass
-        else:
-            self.rex.speed = value;
-            self.ui.rdoutSpeed.setText(str(100 * value) + "%")
-            self.ui.sldrSpeed.setProperty("value",value*100)        
-
+    
+    
+    
              
     def iResetPosition(self):
 
-    	self.iSetTorque(0.5)
-    	self.iSetSpeed(0.2)
+    	self.rex.iSetTorque(0.5)
+    	self.rex.iSetSpeed(0.2)
     	self.rex.cmd_publish();
 
-        self.iSetJointAngle(0,0)
-        self.iSetJointAngle(1,0)
-        self.iSetJointAngle(2,0)
-        self.iSetJointAngle(3,0)
+        self.rex.iSetJointAngle(0,0)
+        self.rex.iSetJointAngle(1,0)
+        self.rex.iSetJointAngle(2,0)
+        self.rex.iSetJointAngle(3,0)
         self.rex.cmd_publish()
 
     def iResetTorqueAndSpeed(self):
-        self.iSetTorque(0.0)
-        self.iSetSpeed(0.1)
+        self.rex.iSetTorque(0.0)
+        self.rex.iSetSpeed(0.1)
         self.rex.cmd_publish()
 
 
@@ -416,7 +376,7 @@ class Gui(QtGui.QMainWindow):
         
 
     def iTrainBegin(self):
-        self.iSetTorque(0.0);
+        self.rex.iSetTorque(0.0);
         self.iTrain_ClearRecord()
         self.rex.plan_status = 2
         
@@ -466,7 +426,7 @@ class Gui(QtGui.QMainWindow):
     """
 	# Begin replaying waypoints that were continuously set
     def iReplayBegin(self):
-        self.iSetTorque(0.5)
+        self.rex.iSetTorque(0.5)
         self.rex.plan_status = 5
         self.rex.way_number = 0
         print("Replay Start")
@@ -484,10 +444,10 @@ class Gui(QtGui.QMainWindow):
 
     def iReplay_SetOneSensorData(self,valueIndex):
         sensorData = self.rex.way[valueIndex]
-        self.iSetJointAngle(0,sensorData[0])
-        self.iSetJointAngle(1,sensorData[1])
-        self.iSetJointAngle(2,sensorData[2])
-        self.iSetJointAngle(3,sensorData[3])
+        self.rex.iSetJointAngle(0,sensorData[0])
+        self.rex.iSetJointAngle(1,sensorData[1])
+        self.rex.iSetJointAngle(2,sensorData[2])
+        self.rex.iSetJointAngle(3,sensorData[3])
         self.rex.cmd_publish();
 
 	# TODO: add comments
@@ -507,8 +467,8 @@ class Gui(QtGui.QMainWindow):
 
     def iReplayWPTBegin_SLOW(self):
 
-        self.iSetTorque(0.7)
-        self.iSetSpeed(GLOBALSLOWSPEED)
+        self.rex.iSetTorque(0.7)
+        self.rex.iSetSpeed(GLOBALSLOWSPEED)
         self.rex.plan_status = 3
         self.rex.wpt_number = 0
         self.rex.recslow_total = 0
@@ -519,8 +479,8 @@ class Gui(QtGui.QMainWindow):
     # Fast mode: plan_status = 4.
     def iReplayWPTBegin_FAST(self):
 
-        self.iSetTorque(0.7)
-        self.iSetSpeed(GLOBALFASTSPEED)
+        self.rex.iSetTorque(0.7)
+        self.rex.iSetSpeed(GLOBALFASTSPEED)
         self.rex.plan_status = 4
         self.rex.wpt_number = 0
         self.rex.recfast_total = 0
@@ -591,10 +551,10 @@ class Gui(QtGui.QMainWindow):
             if (arrived):
                 self.rex.wpt_number = self.rex.wpt_number + 1
             else:
-                self.iSetJointAngle(0,target[0]);
-                self.iSetJointAngle(1,target[1]);
-                self.iSetJointAngle(2,target[2]);
-                self.iSetJointAngle(3,target[3]);
+                self.rex.iSetJointAngle(0,target[0]);
+                self.rex.iSetJointAngle(1,target[1]);
+                self.rex.iSetJointAngle(2,target[2]);
+                self.rex.iSetJointAngle(3,target[3]);
                 self.rex.cmd_publish();
                 
 
@@ -910,10 +870,10 @@ class Gui(QtGui.QMainWindow):
         print("[Msg]: IK is called.")
         validity, IK_conf_1, IK_conf_2, IK_conf_3, IK_conf_4 = self.rex.rexarm_IK([x,y,z,phi],1);
         if (validity):
-            self.iSetJointAngle(0,  IK_conf_1[0]);
-            self.iSetJointAngle(1,  IK_conf_1[1]);
-            self.iSetJointAngle(2,  IK_conf_1[2]);
-            self.iSetJointAngle(3,  IK_conf_1[3]);
+            self.rex.iSetJointAngle(0,  IK_conf_1[0]);
+            self.rex.iSetJointAngle(1,  IK_conf_1[1]);
+            self.rex.iSetJointAngle(2,  IK_conf_1[2]);
+            self.rex.iSetJointAngle(3,  IK_conf_1[3]);
             self.rex.cmd_publish();
         else:
             print("[Msg]: IK is not reachable.")
