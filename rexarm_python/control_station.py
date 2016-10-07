@@ -322,7 +322,7 @@ class Gui(QtGui.QMainWindow):
                 """ 
                 print affine calibration matrix numbers to terminal
                 """ 
-                print self.video.aff_matrix
+                print ("[Msg]: Affine Finished.")
 
     def affine_cal(self):
         """ 
