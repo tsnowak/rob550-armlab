@@ -8,6 +8,14 @@ class Video():
         self.capture.set(3, 1280)
         self.capture.set(4, 960)
         self.currentFrame=np.array([])
+        """
+        Statemachine trigger.
+
+        """
+        self.numPokRemain  = 0
+        self.whetherFinishedCam = False;
+        self.nextLocationofPokmon = [0,0];
+
 
         """ 
         Affine Calibration Variables 
@@ -28,6 +36,7 @@ class Video():
         """                      
         Capture frame, convert to RGB, and return opencv image      
         """
+
         ret, frame=self.capture.read()
         if(ret==True):
             self.currentFrame=cv2.cvtColor(frame, cv2.COLOR_BAYER_GR2RGB)
@@ -60,7 +69,7 @@ class Video():
         Implement your color blob detector here.  
         You will need to detect 5 different color blobs
         """
-	r2_kernel = np.ones((2,2),np.uint8)
+        r2_kernel = np.ones((2,2),np.uint8)
         r3_kernel = np.ones((3,3),np.uint8)
         r4_kernel = np.ones((4,4),np.uint8)
 
