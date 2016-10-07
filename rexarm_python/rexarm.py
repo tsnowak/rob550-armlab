@@ -198,8 +198,41 @@ class Rexarm():
 
 
 
+    """
+    The helper function for IK
+    Function: private function for rexarm_IK, used to do the angle changing from configuration 1 2 to configuration 3 4.
+    """
+    def rexarm_IK_helper(self,value):
+        while (not (value > -PI and value <= PI)):
+            if (value <= -PI):
+                value = value + 2 * PI
+            if (value > PI):
+                value  = value - 2 * PI
+        return value
+    """
+    The helper function fo rrexarm_IK:
+    Function: Help rexarm_IK to see if a point is reachable.
+    """    
+    def CosSinRangeCheck(self, value):
+        if (value >= -1 and value <= 1):
+            return True
+        else:
+            return False
 
-    def rexarm_IK(pose, cfg):
+    """
+    Name: rexarm_IK
+    Input: pose: 4 x 1 tuple: [x, y, z, phi], the target location and orientation.
+            cfg: not used yet.
+    Output: validity, configuration_1, configuration_2, configuration_3, configuration_4.
+            where:
+            1. Validity: Should if the given location is reachable. If not reachable, then return 0,0,0,0,0
+            2. Configuration_1: The first configuration, Elbow is Up, and face to x-positive (Note: this x is defined by Zhentao, not global X)
+            3. Configuration_2: The first configuration, Elbow is Down, and face to x-positive
+            4. Configuration_3: The first configuration, Elbow is Up, and face to x-negative
+            5. Configuration_4: The first configuration, Elbow is Down, and face to x-nagative.
+    """
+
+    def rexarm_IK(self, pose, cfg):
         """
         Calculates inverse kinematics for the rexarm
         pose is a tuple (x, y, z, phi) which describes the desired
@@ -207,7 +240,136 @@ class Rexarm():
         cfg describe elbow down (0) or elbow up (1) configuration
         returns a 4-tuple of joint angles or NONE if configuration is impossible
         """
-        pass
+
+        G_x = pose[0];
+        G_y = pose[1];
+        G_z = pose[2];
+        G_phi=pose[3];
+
+        if (not (G_y == 0 and G_x < 0)):
+            configuration_base = math.atan2(G_y, G_x);
+        else:
+            print("ERROR: in rexarm_IK(), besure that not (y ==0 and x < 0), because it exceed the posible moving configuration.");
+            #TODO: the above equation need to be refined, so that the singular condition is also reachable.
+
+        #Convert to plane coordinate frame (x,z)
+        G_x = math.sqrt(G_x **2 + G_y **2);
+        Angle_ZWG = G_phi;
+
+        #calculate the location of W point. (Wrist joint.)
+
+       
+
+        W_x = G_x  - L4 * math.sin(Angle_ZWG);
+        W_z = G_z  - L4 * math.cos(Angle_ZWG);
+        
+        L_SW = math.sqrt(W_x ** 2 + (W_z - L1)**2);
+      
+        if (self.CosSinRangeCheck((L2**2 + L3**2 - L_SW**2) *1.0 / (2 * L2 * L3))):
+            Angle_WES = math.acos((L2**2 + L3**2 - L_SW**2) *1.0 / (2 * L2 * L3))
+        else:
+            return 0,0,0,0,0
+        
+        if (self.CosSinRangeCheck((L_SW **2 + L2**2  - L3**2) / (2 * L2 * L_SW))):
+            Angle_WSE = math.acos((L_SW **2 + L2**2  - L3**2) / (2 * L2 * L_SW))
+        else:
+            return 0,0,0,0,0
+
+        Angle_SWE = PI - Angle_WES - Angle_WSE
+
+       
+        configuration_elbow_up = PI  - Angle_WES;
+        configuration_elbow_up = - configuration_elbow_up;
+        Angle_ZSW = math.atan2(W_x, W_z - L1)
+        configuration_shoulder_up = Angle_ZSW - Angle_WSE
+        configuration_shoulder_up =  - configuration_shoulder_up
+        configuration_wrist_up = Angle_ZWG + configuration_shoulder_up + configuration_elbow_up;
+
+        configuration_wrist_up = - configuration_wrist_up;
+
+        configuration_elbow_down = PI  - Angle_WES;
+        
+        configuration_elbow_down = + configuration_elbow_down;
+        Angle_ZSW = math.atan2(W_x, W_z - L1)
+        configuration_shoulder_down = Angle_ZSW + Angle_WSE
+        configuration_shoulder_down =  - configuration_shoulder_down
+
+
+        configuration_wrist_down = Angle_ZWG + configuration_shoulder_down + configuration_elbow_down;
+        configuration_wrist_down = - configuration_wrist_down;
+
+
+
+        configuration_1 = [configuration_base, configuration_shoulder_up,configuration_elbow_up,configuration_wrist_up];
+        configuration_2 = [configuration_base, configuration_shoulder_down,configuration_elbow_down,0];
+        
+
+        configuration_3 = [ self.rexarm_IK_helper(configuration_1[0] + PI) , -configuration_1[1],-configuration_1[2],-configuration_1[3]]
+        configuration_4 = [ self.rexarm_IK_helper(configuration_2[0] + PI) , -configuration_2[1],-configuration_2[2],-configuration_2[3]]
+
+        return 1,configuration_1, configuration_2, configuration_3, configuration_4
+
+
+        """
+        #Configuration of base servo is here.
+        configuration_base = math.atan2(G_y, G_x) ;
+
+
+#       Here change the coordinate system so that the x-z plane is paralle to the arm's plane.
+        G_x = math.sqrt(G_x ** 2 + G_y ** 2);
+
+        Angle_ZWG = G_phi
+
+
+        W_x = G_x  - L4 * math.sin(Angle_ZWG);
+        W_z = G_z  - L4 * math.cos(Angle_ZWG);
+        
+        
+
+        L_SW = math.sqrt(W_x ** 2 + (W_z - L1)**2);
+
+        
+        print([L2,L3,L_SW, ((L2**2 + L3**2 - L_SW**2) *1.0 / (2 * L2 * L3))])
+        Angle_WES = math.acos((L2**2 + L3**2 - L_SW**2) *1.0 / (2 * L2 * L3))
+        Angle_WSE = math.acos((L_SW **2 + L2**2  - L3**2) / (2 * L2 * L_SW))
+        Angle_SWE = PI - Angle_WES - Angle_WSE
+
+        Angle_ZSW = math.atan2(W_x, W_z - L1)
+
+
+
+
+        configuration_shoulder_1 = Angle_ZSW - Angle_WSE; #The one that you can get by rotation from z to x w.r.t. positive Y axis,
+        configuration_shoulder_2 = Angle_ZSW + Angle_WSE;#The second one that ...
+
+        configuration_shoulder_1 = -configuration_shoulder_1
+        configuration_shoulder_2 = -configuration_shoulder_2
+
+
+
+        print([Angle_WES, Angle_WES])        
+        configuration_elbow_1 = PI - Angle_WES;
+        configuration_elbow_2 = -PI + Angle_WES;
+
+        configuration_elbow_1 =  - configuration_elbow_1 
+        configuration_elbow_2 = -configuration_elbow_2
+
+
+        Angle_ZEW_1 = configuration_shoulder_1 + configuration_elbow_1;
+        Angle_ZEW_2 = configuration_shoulder_2 + configuration_elbow_2;
+
+        configuration_wrist_1 = Angle_ZWG - Angle_ZEW_1;
+        configuration_wrist_2 = Angle_ZWG - Angle_ZEW_2;
+
+        configuration_wrist_1 = -configuration_wrist_1;
+        configuration_wrist_2 = -configuration_wrist_2;
+
+        configuration_1 = [configuration_base, configuration_shoulder_1, configuration_elbow_1, configuration_wrist_1]
+        configuration_2 = [configuration_base, configuration_shoulder_2, configuration_elbow_2, configuration_wrist_2]
+
+        """
+
+        return configuration_1;
         
     def rexarm_collision_check(q):
         """
