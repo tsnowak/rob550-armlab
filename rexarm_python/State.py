@@ -40,6 +40,7 @@ STATE_CODE_CP = 5
 STATE_CODE_MTB = 6
 STATE_CODE_RP = 7
 STATE_CODE_END = 8
+STATE_CODE_RAP = 9
 
 STATE_CODE_MT_CI = 41
 STATE_CODE_MT_GTNWPT = 42
@@ -63,10 +64,9 @@ class StateManager():
         self.state_MTB = State_MoveToBall(self.rexarm);
         self.state_RP = State_ReleashPokmon(self.rexarm);
         self.State_END = State_END(self.rexarm);
-
-        #self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.state_WTFT);
-        #self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_WTFT);
-        #self.state_MRFT_END = State_MTFT_End(self.rexarm);
+        self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.state_MTFT);
+        self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_MTFT);
+        self.state_MRFT_END = State_MTFT_End(self.rexarm);
 
         self.currentState = STATE_CODE_INIT
 
@@ -94,25 +94,32 @@ class StateManager():
         7. RP: State_ReleashPokmon
             Release the pokmon to the State_MoveToBall
 
-        8. END: State_END:
+        8. RAP: State_ResetArmPosition
+            Reset the arm's position to the vertical position.
+
+        9. END: State_END:
             Finished the competition.
 
-                    ________(not found pokmon)____________________________________________
-                    |                                                                     |
-                    |                                                                     |---> END
-        INIT ---> CCAFNP ----(found pokmon) ---> OP ---> MTFT ----> CP --->MTB ---> RP
-                    ^                                                               |
-                    |                                                               |
-                    |_______________________________________________________________| 
-        
-        
 
 
+                    ________(not found pokmon)___________________________________________________
+                    |                                                                            |
+                    |                                                                            |---> END
+        INIT ---> CCAFNP ----(found pokmon) ---> OP ---> MTFT ----> CP --->MTB ---> RP ---> RAP
+                    ^                                     |        |                         |
+                    |                                     |        |                         |
+                    |____________________________________(|)______(|)________________________| 
+                                                          |        |  
+                                                          |        |________________
+                                                          |                        |
+                                                       MT_CI ---> MT_GTNWPT ----> MT_END
+                                                                  |   ^
+                                                                  |   |
+                                                                  |___|
 
         ------MTFT---------------------------------------------------------------------
 
 
-        MT_CI ---> GTNWPT
 
 
         """
@@ -164,9 +171,14 @@ class StateManager():
                     self.currentState = STATE_CODE_OG
             #else:
             #    pass
+            #Keep finding the location.
         
 
-        #Keep finding the location.
+
+
+
+
+
         """
         State_OpenGripper
         -----
@@ -175,15 +187,34 @@ class StateManager():
           OG ---------> MTFT
         
         """
+
         if (self.currentState == STATE_CODE_OG):
             if (self.state_OG.iOpenGripper(self.rexarm) == 1):
                 print('[msg] Gripper opened.')
                 self.currentState = STATE_CODE_MTFT
             else:# gripper not fully opened
                 pass
+
+
+
+
+
+
         '''
         State_MoveToFinalTarget
         MTFT
+
+                          MTFT     CP 
+                          |        ^    
+                          |        |                        
+                          |        |________________
+                          |                        |
+                        MT_CI ---> MT_GTNWPT ----> MT_END
+                                    |   ^
+                                    |   |
+                                    |___|
+
+
         '''
 
         if (self.currentState == STATE_CODE_MTFT):
@@ -192,44 +223,87 @@ class StateManager():
             #initial
             if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_CI):
                 self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation() #TODO
-                #self.state_WTFT_CI.calculate()
+                """
+                Calculate the intermediate way point.
+                """
+                self.state_WTFT_CI.calculate()
+
                 self.state_MTFT.MT_currentstate = STATE_CODE_MT_GTNWPT#go to next way point
 
             elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_GTNWPT):
-                self.currentState = STATE_CODE_CP
-            
-            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):# the last pokemon
-                self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI
+                # Write function in the class state_MTFT_GTNW so that the arm can keep moving to the next way points.
+                # 
+                # state_MTFT_GTNW: calculate the inverse kinematics.
+                # state_MTFT_GTNW: iSetJointAngles()
+                # state_MTFT_GTNW: cmd_publish()
+                # state_MTFT_GTNW: compare the current location with the way point's configuration.
+                #                   If within error torrance, then up date the state_MTFT.intermediatelocationcurrentnumber += 1.
+                #                    
+                # state_MTFT_GTNW: if the currentintermediatewaypointnumber = total way point number, then go to the next state: state_MTFT_END
+                  
+
+
+
+                self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
+
+            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):
+                print('[msg] Done moving arm')
+                self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI#MT set back to initial state
                 self.currentState = STATE_CODE_CP
 
 
         '''
-        catch pokemon
-        CP
+        catch pokemon: close gripper
+        CP --> MTB
         '''
         if (self.currentState == STATE_CODE_CP):
 
-            #if finished
-            self.currentState = STATE_CODE_MTB
+            if (self.state_CP.iCloseGripper(self.rexarm) == 2):
+                print('[msg] Gripper closed.')
+                self.currentState = STATE_CODE_MTB
+            else:# gripper not fully closed
+                pass
 
 
         '''
         State_MoveToBall
-        MTB
+        MTB-->RP
         '''
         if (self.currentState == STATE_CODE_MTB):
 
-            #if finished
+
+            #
+            # Copy from MTFT change the class name.
+            #
+
             self.currentState = STATE_CODE_RP
+
+
+
 
 
         '''
         State_ReleashPokmon
-        RP 
+        RP --> RAP
         '''
         if (self.currentState == STATE_CODE_RP):
 
-            #if finished
+            
+            # Copy from OG
+
+            self.currentState = STATE_CODE_RAP
+
+
+        '''
+         RAP ---> CCAFNP
+        '''
+        if (self.currentState == STATE_CODE_RAP):
+            
+            #
+            # iSetJointAngle.
+            # cmd_publish() 
+            # check if has arrived.
+
             self.currentState = STATE_CODE_CCACFP
 
         
@@ -340,12 +414,37 @@ class State_MoveToFinalTarget():
 class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
     def __init__(self,wtft):
         pass
+    
+
+
+    """
+    Name: calculate()
+    Function: calculate the intermediate location of the path and change the following variables:
+
+        self.intermediatelocation = [[0,0,0,0]]   : A list of 4 x 1 vectors, each vector mean the x,y,z,phi configuration of a certain way point
+        self.intermediatelocationnumber = 0 : The number of vectors (i.e. Every location apart from the first one.)
+        self.intermediatelocationcurrentnumber = 0: This is the current location number.
+
+    """
     def calculate():
         pass
 
 class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
-    def __init__(self, rexarm, wtft):
+    def __init__(self, rexarm, mtft):
+        self.rexarm = rexarm;
+
+
+    def iGoToNextWayPoint():
+
+        
         pass
+
+    def iCheckIfArrived():
+        pass
+
+    def iCalculateInverseKinematics():
+        pass
+
 
 class State_MTFT_End():# change state
     def __init__(self, rexarm):
@@ -356,8 +455,12 @@ class State_MTFT_End():# change state
 
 
 class State_CatchPokmon():
-    def __init__(self, rexarm):
+    def __init__(self,rexarm):
+        self.rexarm = rexarm
         pass
+
+    def iCloseGripper(self, rexarm):
+        return self.rexarm.rexarm_gripper_grab(0);
 
 class State_MoveToBall():
     def __init__(self, rexarm):
@@ -367,6 +470,10 @@ class State_ReleashPokmon():
     def __init__(self, rexarm):
         pass
 
+
+class State_ResetArmPosition():
+    def __init__(self, rexarm):
+        pass
 
 class State_END():
     def __init__(self, rexarm):
