@@ -619,20 +619,30 @@ class Rexarm():
         else: #close
             if LOAD_DETECTION == 1:
                 #load detection
-                if(self.load_fb[4] < THRESHOLD_LOAD  and self.gripper_largeTor != 1): #normal torque
+                if(math.fabs(self.load_fb[4]) < THRESHOLD_LOAD  and self.gripper_largeTor != 1): #normal torque
                     self.ui.sldrGrip1.setProperty("value",-29)
                     self.ui.rdoutGrip1.setText(str(-29))
                 else: #torque too large, then fix angle at that point
-                    self.gripper_largeTor = 1
-                    self.ui.sldrGrip1.setProperty("value",self.joint_angles_fb[4]*R2D-3)
-                    self.ui.rdoutGrip1.setText(str(self.joint_angles_fb[4]*R2D-3))
-                    print('============LOAD==========='),
-                    print(self.load_fb[4]),
-                    print('  anle_fb: '),
-                    print(self.load_fb[4])
+                    if self.joint_angles_fb[4]*R2D < 0:
+                        self.gripper_largeTor = 1
+                        if self.joint_angles_fb[4] > -20:
+                            self.ui.sldrGrip1.setProperty("value",self.joint_angles_fb[4]*R2D-7)
+                            self.ui.rdoutGrip1.setText(str(self.joint_angles_fb[4]*R2D-7))
+                        else:                            
+                            self.ui.sldrGrip1.setProperty("value",self.joint_angles_fb[4]*R2D-3)
+                            self.ui.rdoutGrip1.setText(str(self.joint_angles_fb[4]*R2D-3))
+                '''
+                print('=======LOAD====='),
+                print(self.load_fb[4]),
+                print('  angle_fb: '),
+                print(self.joint_angles_fb[4]*R2D),
+                print(' ' ),
+                print(self.gripper_largeTor)
+                '''
                 #set tolerance, change status to "closed"
                 #also change to closed when the torque exceed max
                 if self.joint_angles_fb[4]*R2D < -25 or self.gripper_largeTor == 1: 
+                    self.gripper_largeTor = 0
                     self.gripper_status = 2
             else: #0 no load detection                
                 self.ui.sldrGrip1.setProperty("value",-29)
