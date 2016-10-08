@@ -59,14 +59,14 @@ class StateManager():
         self.state_INIT = State_InitialState(self.rexarm);
         self.state_CCAFNP = State_CameraCalibrationAndCalculateFindNextPokmon(self.rexarm);
         self.state_OG = State_OpenGripper(self.rexarm);
-        self.state_MTFT = State_MoveToFinalTarget(self.rexarm);
+        self.state_MTFT = State_MoveToFinalTarget(self.rexarm, self.video);
         self.state_CP = State_CatchPokmon(self.rexarm);
         self.state_MTB = State_MoveToBall(self.rexarm);
         self.state_RP = State_ReleashPokmon(self.rexarm);
         self.State_END = State_END(self.rexarm);
-        self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.state_MTFT);
+        self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.rexarm, self.state_MTFT, self.video);
         self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_MTFT);
-        self.state_MRFT_END = State_MTFT_End(self.rexarm);
+        self.state_MTFT_END = State_MTFT_End(self.rexarm);
 
         self.currentState = STATE_CODE_INIT
 
@@ -218,16 +218,17 @@ class StateManager():
         '''
 
         if (self.currentState == STATE_CODE_MTFT):
-            print('[msg] Move to target')
+            
             
             #initial
             if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_CI):
-                self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation() #TODO
+                self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation(self.rexarm) #TODO
                 """
                 Calculate the intermediate way point.
                 """
-                self.state_WTFT_CI.calculate()
+                self.state_MTFT_CI.calculate()
 
+                
                 self.state_MTFT.MT_currentstate = STATE_CODE_MT_GTNWPT#go to next way point
 
             elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_GTNWPT):
@@ -240,14 +241,14 @@ class StateManager():
                 #                   If within error torrance, then up date the state_MTFT.intermediatelocationcurrentnumber += 1.
                 #                    
                 # state_MTFT_GTNW: if the currentintermediatewaypointnumber = total way point number, then go to the next state: state_MTFT_END
-                  
+                
 
 
-
-                self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
-
+                pass
+                #Temp comment here.
+                #self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
             elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):
-                print('[msg] Done moving arm')
+                print('[Msg]: Done moving arm')
                 self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI#MT set back to initial state
                 self.currentState = STATE_CODE_CP
 
@@ -259,7 +260,7 @@ class StateManager():
         if (self.currentState == STATE_CODE_CP):
 
             if (self.state_CP.iCloseGripper(self.rexarm) == 2):
-                print('[msg] Gripper closed.')
+                print('[Msg]: Gripper closed.')
                 self.currentState = STATE_CODE_MTB
             else:# gripper not fully closed
                 pass
@@ -338,25 +339,30 @@ class State_MoveToFinalTarget():
     """
     Innitialize the state State_MoveToFinalTarget
     """
-    def __init__(self,rexarm):
+    def __init__(self,rexarm, video):
         
-        self.initialLocation = [0.0,0.0,0.0,0.0] #x,y,z,phi
+        self.initialLocation = [0.0,0.0,0.0,0.0] #x,y,z,phi in [mm,mm,mm,rad]
         self.MT_currentstate = STATE_CODE_MT_CI
 
 
         self.intermediatelocation = [[0,0,0,0]]
         self.intermediatelocationnumber = 0
         self.intermediatelocationcurrentnumber = 0
-
-        self.finaltarget  = [0.0]*4  #The data structure is [x,y,z,T]
         self.rexarm = rexarm
+        self.video = video
+        self.finaltarget = [0,0]
+
 
 
     """
     Name: state_MTFT_iCheckIfArrived
     Function: check if the current arm has arrived the final target.
     """
-    def state_MTFT_iSetCurrentLocationAsInitialLocation(self):
+    def state_MTFT_iSetCurrentLocationAsInitialLocation(self, rexarm):
+        configuration = rexarm.joint_angles_fb;
+
+        self.initialLocation =  rexarm.rexarm_FK(configuration)
+
         pass
 
 
@@ -412,7 +418,13 @@ class State_MoveToFinalTarget():
 
 
 class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
-    def __init__(self,wtft):
+    def __init__(self,rexarm, mtft, video):
+        self.mtft = mtft
+        self.rexarm = rexarm
+        self.video = video
+
+
+
         pass
     
 
@@ -426,8 +438,56 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
         self.intermediatelocationcurrentnumber = 0: This is the current location number.
 
     """
-    def calculate():
-        pass
+    def calculate(self):
+
+        self.mtft.finaltarget  = self.video.nextLocationofPokmon  #The data structure is [x,y]
+        
+
+
+        self.mtft.state_MTFT_iSetCurrentLocationAsInitialLocation(self.rexarm);
+        print("[Msg]: calculate() is called.")
+
+        self.mtft.intermediatelocationnumber = 2
+
+        #First way point.
+        phi_3 = PI/2;
+
+        x_3 = self.mtft.finaltarget[0]
+        y_3 = self.mtft.finaltarget[1]
+        z_3 = 35;
+
+        print([x_3,y_3,z_3])
+
+        x_2 = x_3
+        y_2 = y_3
+        z_2 = z_3 + 70
+        phi_2 = PI/2
+
+
+        r_target = math.sqrt( x_3**2 + y_3**2 );
+
+        x_1 = x_3 *1.0 / r_target * 200;
+        y_1 = y_3 *1.0 / r_target * 200;
+
+        z_1 = 202
+
+        phi_1 = PI/2
+
+        self.mtft.intermediatelocation=[]
+
+        self.mtft.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
+        self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
+
+        self.mtft.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
+        self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
+
+        self.mtft.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
+        self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
+
+        print("[Msg]: The intermediatelocation calculated finished.");
+        print(self.mtft.intermediatelocation)
+
+
 
 class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
     def __init__(self, rexarm, mtft):

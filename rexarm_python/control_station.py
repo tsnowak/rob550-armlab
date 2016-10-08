@@ -702,7 +702,7 @@ class Gui(QtGui.QMainWindow):
         self.ui.rdoutX.setText(str(float("{0:.2f}".format(self.rex.P0[0] ))));
         self.ui.rdoutY.setText(str(float("{0:.2f}".format(self.rex.P0[1] ))));
         self.ui.rdoutZ.setText(str(float("{0:.2f}".format(self.rex.P0[2] ))));
-        self.ui.rdoutT.setText(str(float("{0:.2f}".format(self.rex.T ))));
+        self.ui.rdoutT.setText(str(float("{0:.2f}".format(self.rex.T * R2D))));
 
 
     # function which sets the self.rex.joint_angles for each joint to the values
@@ -916,12 +916,15 @@ class Gui(QtGui.QMainWindow):
 
     def iMimicCamera(self, x, y):
         
-        print("[Msg]: MimiCam is called.")
+        print("[Msg]: MimicCam is called.")
         
         self.video.numPokRemain = 1
         self.video.whetherFinishedCam = True;
-        self.video.nextLocationofPokmon = [x,y];
+        print("Camera here=========================")
 
+        self.video.nextLocationofPokmon = [x,y];
+        print(self.video.nextLocationofPokmon)
+        
         """
         self.numPokRemain  = 0
         self.whetherFinishedCam = False;

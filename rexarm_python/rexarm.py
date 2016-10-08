@@ -19,7 +19,7 @@ FK Constant
 """
 DH1_D = 116
 DH3_A = 100
-DH4_A = 110
+DH4_A = (110-15)
 
 
 L1 = DH1_D
@@ -184,6 +184,8 @@ class Rexarm():
         and the link to return the position for
         returns a 4-tuple (x, y, z, phi) representing the pose of the 
         desired link
+
+        return in format [x,y,z,phi] with unit[mm,mm,mm,rad]
         """
         
 
@@ -212,8 +214,8 @@ class Rexarm():
         self.P0[1] = Pbase[1][0]
         self.P0[2] = Pbase[2][0]
 
-        self.T =  (- 1 * (angles[1] + angles[2] + angles[3] ) - PI/2 ) * R2D;
-
+        self.T =  (- 1 * (angles[1] + angles[2] + angles[3] )  ) ;
+        return [self.P0[0],self.P0[1],self.P0[2],self.T]
 
 
 
