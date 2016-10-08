@@ -41,6 +41,9 @@ STATE_CODE_MTB = 6
 STATE_CODE_RP = 7
 STATE_CODE_END = 8
 
+STATE_CODE_MT_CI = 41
+STATE_CODE_MT_GTNWPT = 42
+
 
 
 """State Class"""
@@ -59,6 +62,10 @@ class StateManager():
         self.state_MTB = State_MoveToBall(self.rexarm);
         self.state_RP = State_ReleashPokmon(self.rexarm);
         self.State_END = State_END(self.rexarm);
+
+        self.state_MTFT_CI = State_MTFT_CalculateIntemediate(self.state_WTFT);
+        self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_WTFT);
+        self.state_MRFT_END = State_MTFT_End(self.rexarm);
 
         """
         State Definition:
@@ -95,6 +102,16 @@ class StateManager():
                     |                                                               |
                     |_______________________________________________________________| 
         
+        
+
+
+
+        ------MTFT---------------------------------------------------------------------
+
+
+        MT_CI ---> GTNWPT
+
+
         """
 
 
@@ -162,7 +179,22 @@ class StateManager():
 
 
         if (self.currentState == STATE_CODE_MTFT):
-            
+
+            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):
+                self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI
+                self.currentState = STATE_CODE_CP
+
+            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_CI):
+                self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation(); #TODO
+                self.state_WTFT_CI.calculate();
+                self.state_MTFT.MT_currentstate = STATE_CODE_MT_GTNWPT
+
+            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_GTNWPT):
+                self.currentState =STATE_CODE_CP
+
+
+
+
 
 
         
@@ -200,7 +232,15 @@ class State_MoveToFinalTarget():
     Innitialize the state State_MoveToFinalTarget
     """
     def __init__(self,rexarm):
-        self.intermediatelocation = []
+        
+        self.initialLocation = [0.0,0.0,0.0,0.0] #x,y,z,phi
+        self.MT_currentstate = STATE_CODE_MT_CI
+
+
+        self.intermediatelocation = [[0,0,0,0]]
+        self.intermediatelocationnumber = 0
+        self.intermediatelocationcurrentnumber = 0
+
         self.finaltarget  = [0.0]*4  #The data structure is [x,y,z,T]
         self.rexarm = rexarm
 
@@ -209,6 +249,9 @@ class State_MoveToFinalTarget():
     Name: state_MTFT_iCheckIfArrived
     Function: check if the current arm has arrived the final target.
     """
+    def state_MTFT_iSetCurrentLocationAsInitialLocation():
+        pass
+
 
     def state_MTFT_iCheckIfArrivedFinalTarget(self):
         self.rexarm.rexarm_FK(self.rexarm.joint_angles_fb)
@@ -255,6 +298,30 @@ class State_MoveToFinalTarget():
         self.rexarm.cmd_publish();
         
 
+
+
+
+
+
+
+class State_MTFT_CalculateIntermediate():
+    def __init__(self,wtft):
+        pass
+    def calculate():
+        pass
+
+class State_MTFT_GoToNextWaypoint():
+    def __init__(self, rexarm, wtft):
+        pass
+
+class State_MTFT_End():
+    def __init__(self, rexarm):
+        pass
+
+
+
+
+
 class State_CatchPokmon():
     def __init__(self, rexarm):
         pass
@@ -271,4 +338,10 @@ class State_ReleashPokmon():
 class State_END():
     def __init__(self, rexarm):
         pass
+
+
+
+
+
+
 
