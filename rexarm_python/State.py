@@ -63,7 +63,8 @@ class StateManager():
         self.state_CP = State_CatchPokmon(self.rexarm);
         self.state_MTB = State_MoveToBall(self.rexarm);
         self.state_RP = State_ReleashPokmon(self.rexarm);
-        self.State_END = State_END(self.rexarm);
+        self.state_END = State_END(self.rexarm);
+        
         self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.rexarm, self.state_MTFT, self.video);
         self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_MTFT);
         self.state_MTFT_END = State_MTFT_End(self.rexarm);
@@ -241,10 +242,12 @@ class StateManager():
                 #                   If within error torrance, then up date the state_MTFT.intermediatelocationcurrentnumber += 1.
                 #                    
                 # state_MTFT_GTNW: if the currentintermediatewaypointnumber = total way point number, then go to the next state: state_MTFT_END
+                if self.state_MTFT_GTNW.iGoToNextWayPoint() == True:
+                    #change state -> end
+                    self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
+                    
+               
                 
-
-
-                pass
                 #Temp comment here.
                 #self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
             elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):
@@ -252,6 +255,7 @@ class StateManager():
                 self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI#MT set back to initial state
                 self.currentState = STATE_CODE_CP
 
+                
 
         '''
         catch pokemon: close gripper
@@ -365,7 +369,7 @@ class State_MoveToFinalTarget():
 
         pass
 
-
+    '''
     def state_MTFT_iCheckIfArrivedFinalTarget(self):
         self.rexarm.rexarm_FK(self.rexarm.joint_angles_fb)
         realtimelocationgesture = [self.rexarm.P0[0],self.rexarm.P0[1],self.rexarm.P0[2],self.rexarm.T]
@@ -373,10 +377,11 @@ class State_MoveToFinalTarget():
         errorY = abs(realtimelocationgesture[1] - self.finaltarget[1]);
         errorZ = abs(realtimelocationgesture[2] - self.finaltarget[2]);
         errorT = abs(realtimelocationgesture[3] - self.finaltarget[3]);
-        if (errorX < ERROR_LOCAL_TOL_T and errorY < ERROR_LOCAL_TOL_Y and errorZ < ERROR_LOCAL_TOL_Z and errorT < ERROR_LOCAL_TOL_T):
+        if (errorX < ERROR_LOCAL_TOL_X and errorY < ERROR_LOCAL_TOL_Y and errorZ < ERROR_LOCAL_TOL_Z and errorT < ERROR_LOCAL_TOL_T):
             return True
         else:
             return False
+    '''
 
     """
     name: state_MTFT_iAddIntermediateLocation
@@ -408,7 +413,7 @@ class State_MoveToFinalTarget():
         self.rexarm.iSetJointAngle(2,configuration_1[2])
         self.rexarm.iSetJointAngle(3,configuration_1[3])
 
-        self.rexarm.cmd_publish();
+        self.rexarm.cmd_publish()
         
 
 
@@ -445,9 +450,8 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
 
 
         self.mtft.state_MTFT_iSetCurrentLocationAsInitialLocation(self.rexarm);
-        print("[Msg]: calculate() is called.")
-
-        self.mtft.intermediatelocationnumber = 2
+        
+        self.mtft.intermediatelocationnumber = 0
 
         #First way point.
         phi_3 = PI/2;
@@ -456,8 +460,7 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
         y_3 = self.mtft.finaltarget[1]
         z_3 = 35;
 
-        print([x_3,y_3,z_3])
-
+        
         x_2 = x_3
         y_2 = y_3
         z_2 = z_3 + 70
@@ -484,27 +487,69 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
         self.mtft.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
         self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
 
-        print("[Msg]: The intermediatelocation calculated finished.");
-        print(self.mtft.intermediatelocation)
-
+        
 
 
 class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
     def __init__(self, rexarm, mtft):
         self.rexarm = rexarm;
+        self.mtft = mtft
 
+    def iGoToNextWayPoint(self):
+        isFinished = False
 
-    def iGoToNextWayPoint():
+        if self.mtft.intermediatelocationcurrentnumber == self.mtft.intermediatelocationnumber:
+            isFinished = True       
+            return isFinished
 
+        #IK
+        configuration = self.iCalculateInverseKinematics()
+
+        #set joints
+        self.rexarm.iSetJointAngle(0,configuration[1][0])
+        self.rexarm.iSetJointAngle(1,configuration[1][1])
+        self.rexarm.iSetJointAngle(2,configuration[1][2])
+        self.rexarm.iSetJointAngle(3,configuration[1][3])
         
-        pass
+        #publish
+        self.rexarm.cmd_publish()
 
-    def iCheckIfArrived():
-        pass
+        #FK
+        target = self.rexarm.rexarm_FK(configuration[1])
 
-    def iCalculateInverseKinematics():
-        pass
+        #check arrived?
+        isArrived = False
+        isArrived = self.iCheckIfArrived(target)
+        
+        if isArrived == True:
+            #move to next point
+            self.mtft.intermediatelocationcurrentnumber = self.mtft.intermediatelocationcurrentnumber + 1
+            
+            # arrived
+            print("[Msg]: "),
+            print(self.mtft.intermediatelocationcurrentnumber-1),
+            print(" Way Point Arrived.")
 
+            
+
+        return isFinished
+
+
+    def iCheckIfArrived(self, target):
+        self.rexarm.rexarm_FK(self.rexarm.joint_angles_fb)
+        realtimelocationgesture = [self.rexarm.P0[0],self.rexarm.P0[1],self.rexarm.P0[2],self.rexarm.T]
+        errorX = abs(realtimelocationgesture[0] - target[0]);
+        errorY = abs(realtimelocationgesture[1] - target[1]);
+        errorZ = abs(realtimelocationgesture[2] - target[2]);
+        errorT = abs(realtimelocationgesture[3] - target[3]);
+        if (errorX < ERROR_LOCAL_TOL_X and errorY < ERROR_LOCAL_TOL_Y and errorZ < ERROR_LOCAL_TOL_Z and errorT < ERROR_LOCAL_TOL_T):
+            return True
+        else:
+            return False
+
+    def iCalculateInverseKinematics(self):
+        return self.rexarm.rexarm_IK(self.mtft.intermediatelocation[self.mtft.intermediatelocationcurrentnumber], 1)
+            
 
 class State_MTFT_End():# change state
     def __init__(self, rexarm):

@@ -920,10 +920,8 @@ class Gui(QtGui.QMainWindow):
         
         self.video.numPokRemain = 1
         self.video.whetherFinishedCam = True;
-        print("Camera here=========================")
-
+        
         self.video.nextLocationofPokmon = [x,y];
-        print(self.video.nextLocationofPokmon)
         
         """
         self.numPokRemain  = 0
