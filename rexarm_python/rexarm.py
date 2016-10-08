@@ -14,6 +14,11 @@ R2D = 180.0/3.141592
 ANGLE_TOL = 2*PI/180.0 
 
 
+LOAD_DETECTION = 1 # 0 no load detection, 1 load detection
+THRESHOLD_LOAD = 0.2# if exceed this value, the gripper is closed
+
+
+
 """
 FK Constant
 """
@@ -26,6 +31,10 @@ L1 = DH1_D
 L2 = DH3_A
 L3 = DH3_A
 L4 = DH4_A
+
+
+
+
 
 """ Rexarm Class """
 class Rexarm():
@@ -542,7 +551,7 @@ class Rexarm():
         self.iSetJointAngle(3,0)
         self.cmd_publish()
 
-
+    """
     def rexarm_gripper_grab(self,isGrab):
         self.gripper_status = 0
 
@@ -574,14 +583,66 @@ class Rexarm():
             self.ui.sldrGrip1.setProperty("value",-29)
             self.ui.rdoutGrip1.setText(str(-29))
 
+            print('====================')
+            print(self.joint_angles_fb[4]*R2D),
+            print('     ')
+            print(self.load_fb[4])
+
             #set tolerance, change status to "closed"
             #also change to closed when the torque exceed max
-            if self.joint_angles_fb[4]*R2D < -25:
+            if self.joint_angles_fb[4]*R2D < -24:
                 #print('gripper closed')
                 self.gripper_status = 2
 
         #print('[STATUS]gripper angle: '),
         #print self.joint_angles_fb[4]*R2D
+        self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+        self.cmd_publish();
+
+        
+        return self.gripper_status
+
+        """
+
+
+
+    def rexarm_gripper_grab(self,isGrab):
+        self.gripper_status = 0
+
+        if (isGrab == 1): #open
+            self.ui.sldrGrip1.setProperty("value",26)
+            self.ui.rdoutGrip1.setText(str(26)) 
+            if self.joint_angles_fb[4]*R2D > 20: #set a tolerance, chagne status to "opened"
+                #print('gripper opened')
+                self.gripper_status = 1
+
+        else: #close
+            if LOAD_DETECTION == 1:
+                #load detection
+                if(self.load_fb[4] < THRESHOLD_LOAD  and self.gripper_largeTor != 1): #normal torque
+                    self.ui.sldrGrip1.setProperty("value",-29)
+                    self.ui.rdoutGrip1.setText(str(-29))
+                else: #torque too large, then fix angle at that point
+                    self.gripper_largeTor = 1
+                    self.ui.sldrGrip1.setProperty("value",self.joint_angles_fb[4]*R2D-3)
+                    self.ui.rdoutGrip1.setText(str(self.joint_angles_fb[4]*R2D-3))
+                    print('============LOAD==========='),
+                    print(self.load_fb[4]),
+                    print('  anle_fb: '),
+                    print(self.load_fb[4])
+                #set tolerance, change status to "closed"
+                #also change to closed when the torque exceed max
+                if self.joint_angles_fb[4]*R2D < -25 or self.gripper_largeTor == 1: 
+                    self.gripper_status = 2
+            else: #0 no load detection                
+                self.ui.sldrGrip1.setProperty("value",-29)
+                self.ui.rdoutGrip1.setText(str(-29))
+
+                #set tolerance, change status to "closed"
+                #also change to closed when the torque exceed max
+                if self.joint_angles_fb[4]*R2D < -25:
+                    self.gripper_status = 2
+
         self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
         self.cmd_publish();
 

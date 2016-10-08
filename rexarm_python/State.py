@@ -42,9 +42,9 @@ STATE_CODE_RP = 7
 STATE_CODE_END = 8
 STATE_CODE_RAP = 9
 
-STATE_CODE_MT_CI = 41
-STATE_CODE_MT_GTNWPT = 42
-STATE_CODE_MT_END = 43
+STATE_CODE_MTFT_CI = 41
+STATE_CODE_MTFT_GTNWPT = 42
+STATE_CODE_MTFT_END = 43
 
 
 
@@ -56,18 +56,19 @@ class StateManager():
         self.rexarm = rexarm
         self.video = video
 
-        self.state_INIT = State_InitialState(self.rexarm);
-        self.state_CCAFNP = State_CameraCalibrationAndCalculateFindNextPokmon(self.rexarm);
-        self.state_OG = State_OpenGripper(self.rexarm);
-        self.state_MTFT = State_MoveToFinalTarget(self.rexarm, self.video);
-        self.state_CP = State_CatchPokmon(self.rexarm);
-        self.state_MTB = State_MoveToBall(self.rexarm);
-        self.state_RP = State_ReleashPokmon(self.rexarm);
-        self.state_END = State_END(self.rexarm);
+        self.state_INIT = State_InitialState(self.rexarm)
+        self.state_CCAFNP = State_CameraCalibrationAndCalculateFindNextPokmon(self.rexarm)
+        self.state_OG = State_OpenGripper(self.rexarm)
+        self.state_MTFT = State_MoveToFinalTarget(self.rexarm, self.video)
+        self.state_CP = State_CatchPokmon(self.rexarm)
+        self.state_MTB = State_MoveToBall(self.rexarm)
+        self.state_RP = State_ReleashPokmon(self.rexarm)
+        self.state_RAP = State_ResetArmPosition(self.rexarm, self.video)
+        self.state_END = State_END(self.rexarm)
         
-        self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.rexarm, self.state_MTFT, self.video);
-        self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_MTFT);
-        self.state_MTFT_END = State_MTFT_End(self.rexarm);
+        self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.rexarm, self.state_MTFT, self.video)
+        self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_MTFT)
+        self.state_MTFT_END = State_MTFT_End(self.rexarm)
 
         self.currentState = STATE_CODE_INIT
 
@@ -140,6 +141,7 @@ class StateManager():
         if (self.currentState == STATE_CODE_INIT):
             if (self.video.aff_flag == 2):#finished affine
                 self.currentState = STATE_CODE_CCACFP
+                print("[Sts]: STATE_CODE_CCACFP")
         
         
         """
@@ -168,8 +170,10 @@ class StateManager():
             if (self.video.whetherFinishedCam == 1):#If finished 
                 if (self.video.numPokRemain  == 0):  #IF no pokmon is remained.
                     self.currentState = STATE_CODE_END
+                    print("[Sts]: STATE_CODE_END")
                 else:                                  #If found some pokmon:
                     self.currentState = STATE_CODE_OG
+                    print("[Sts]: STATE_CODE_OG")
             #else:
             #    pass
             #Keep finding the location.
@@ -193,6 +197,7 @@ class StateManager():
             if (self.state_OG.iOpenGripper(self.rexarm) == 1):
                 print('[msg] Gripper opened.')
                 self.currentState = STATE_CODE_MTFT
+                print("[Sts]: STATE_CODE_MTFT")
             else:# gripper not fully opened
                 pass
 
@@ -222,7 +227,9 @@ class StateManager():
             
             
             #initial
-            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_CI):
+            if (self.state_MTFT.MT_currentstate == STATE_CODE_MTFT_CI):
+                self.state_MTFT.state_MTFT_initialize()
+
                 self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation(self.rexarm) #TODO
                 """
                 Calculate the intermediate way point.
@@ -230,9 +237,9 @@ class StateManager():
                 self.state_MTFT_CI.calculate()
 
                 
-                self.state_MTFT.MT_currentstate = STATE_CODE_MT_GTNWPT#go to next way point
+                self.state_MTFT.MT_currentstate = STATE_CODE_MTFT_GTNWPT#go to next way point
 
-            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_GTNWPT):
+            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MTFT_GTNWPT):
                 # Write function in the class state_MTFT_GTNW so that the arm can keep moving to the next way points.
                 # 
                 # state_MTFT_GTNW: calculate the inverse kinematics.
@@ -244,16 +251,17 @@ class StateManager():
                 # state_MTFT_GTNW: if the currentintermediatewaypointnumber = total way point number, then go to the next state: state_MTFT_END
                 if self.state_MTFT_GTNW.iGoToNextWayPoint() == True:
                     #change state -> end
-                    self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
+                    self.state_MTFT.MT_currentstate = STATE_CODE_MTFT_END
                     
                
                 
                 #Temp comment here.
-                #self.state_MTFT.MT_currentstate = STATE_CODE_MT_END
-            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):
+                #self.state_MTFT.MT_currentstate = STATE_CODE_MTFT_END
+            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MTFT_END):
                 print('[Msg]: Done moving arm')
-                self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI#MT set back to initial state
+                self.state_MTFT.MT_currentstate = STATE_CODE_MTFT_CI#MT set back to initial state
                 self.currentState = STATE_CODE_CP
+                print("[Sts]: STATE_CODE_CP")
 
                 
 
@@ -266,6 +274,8 @@ class StateManager():
             if (self.state_CP.iCloseGripper(self.rexarm) == 2):
                 print('[Msg]: Gripper closed.')
                 self.currentState = STATE_CODE_MTB
+                print("[Sts]: STATE_CODE_MTB")
+
             else:# gripper not fully closed
                 pass
 
@@ -280,7 +290,7 @@ class StateManager():
             #
             # Copy from MTFT change the class name.
             #
-
+            
             self.currentState = STATE_CODE_RP
 
 
@@ -308,13 +318,12 @@ class StateManager():
             # iSetJointAngle.
             # cmd_publish() 
             # check if has arrived.
-
+            self.state_RAP.iResetOneLoopVariables()
             self.currentState = STATE_CODE_CCACFP
 
         
 
     def StateManager_Test(self):
-
         self.state_MTFT.finaltarget = [152,224,36,(45+90)*D2R]
         self.state_MTFT.state_MTFT_iMoveArmToFinalLocation();
 
@@ -346,7 +355,7 @@ class State_MoveToFinalTarget():
     def __init__(self,rexarm, video):
         
         self.initialLocation = [0.0,0.0,0.0,0.0] #x,y,z,phi in [mm,mm,mm,rad]
-        self.MT_currentstate = STATE_CODE_MT_CI
+        self.MT_currentstate = STATE_CODE_MTFT_CI
 
 
         self.intermediatelocation = [[0,0,0,0]]
@@ -357,6 +366,11 @@ class State_MoveToFinalTarget():
         self.finaltarget = [0,0]
 
 
+    def state_MTFT_initialize(self):
+        self.intermediatelocationnumber = 0
+        self.intermediatelocationcurrentnumber = 0
+        self.intermediatelocation = []
+        self.finaltarget = []
 
     """
     Name: state_MTFT_iCheckIfArrived
@@ -504,6 +518,15 @@ class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
 
         #IK
         configuration = self.iCalculateInverseKinematics()
+        if (configuration[0] == 0):
+            #TODO: Fix error handler.
+            print("[ERROR]:Inreachable!!!")    
+            exit(1);
+        
+
+
+
+
 
         #set joints
         self.rexarm.iSetJointAngle(0,configuration[1][0])
@@ -567,6 +590,30 @@ class State_CatchPokmon():
     def iCloseGripper(self, rexarm):
         return self.rexarm.rexarm_gripper_grab(0);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class State_MoveToBall():
     def __init__(self, rexarm):
         pass
@@ -577,8 +624,17 @@ class State_ReleashPokmon():
 
 
 class State_ResetArmPosition():
-    def __init__(self, rexarm):
+    def __init__(self, rexarm, video):
+        self.video = video
+        self.rexarm = rexarm
+
         pass
+    def iResetOneLoopVariables(self):
+        self.video.numPokRemain = 0
+        self.video.whetherFinishedCam = False
+        self.video.nextLocationofPokmon = [0,0]
+
+
 
 class State_END():
     def __init__(self, rexarm):

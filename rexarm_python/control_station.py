@@ -43,6 +43,12 @@ STATE_CODE_CP = 5
 STATE_CODE_MTB = 6
 STATE_CODE_RP = 7
 STATE_CODE_END = 8
+STATE_CODE_RAP = 9
+
+STATE_CODE_MT_CI = 41
+STATE_CODE_MT_GTNWPT = 42
+STATE_CODE_MT_END = 43
+
 
 
 
@@ -920,9 +926,8 @@ class Gui(QtGui.QMainWindow):
         
         self.video.numPokRemain = 1
         self.video.whetherFinishedCam = True;
-        
         self.video.nextLocationofPokmon = [x,y];
-        
+
         """
         self.numPokRemain  = 0
         self.whetherFinishedCam = False;
@@ -976,6 +981,8 @@ class Gui(QtGui.QMainWindow):
             self.ui.rdoutStatus.setText("STATE_CODE_CCACFP")
         if (self.statemanager.currentState == STATE_CODE_END):
             self.ui.rdoutStatus.setText("STATE_CODE_END")
+        if (self.statemanager.currentState == STATE_CODE_RAP):
+            self.ui.rdoutStatus.setText("STATE_CODE_RAP")
             
             """
             STATE_CODE_INIT  = 1
