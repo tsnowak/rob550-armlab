@@ -43,6 +43,7 @@ STATE_CODE_END = 8
 
 STATE_CODE_MT_CI = 41
 STATE_CODE_MT_GTNWPT = 42
+STATE_CODE_MT_END = 43
 
 
 
@@ -63,9 +64,11 @@ class StateManager():
         self.state_RP = State_ReleashPokmon(self.rexarm);
         self.State_END = State_END(self.rexarm);
 
-        self.state_MTFT_CI = State_MTFT_CalculateIntemediate(self.state_WTFT);
-        self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_WTFT);
-        self.state_MRFT_END = State_MTFT_End(self.rexarm);
+        #self.state_MTFT_CI = State_MTFT_CalculateIntermediate(self.state_WTFT);
+        #self.state_MTFT_GTNW = State_MTFT_GoToNextWaypoint(self.rexarm, self.state_WTFT);
+        #self.state_MRFT_END = State_MTFT_End(self.rexarm);
+
+        self.currentState = STATE_CODE_INIT
 
         """
         State Definition:
@@ -115,7 +118,6 @@ class StateManager():
         """
 
 
-        self.currentState = STATE_CODE_INIT
 
 
     def Statemanager_MoveToNextState(self):
@@ -128,7 +130,7 @@ class StateManager():
 
         """
         if (self.currentState == STATE_CODE_INIT):
-            if (self.video.aff_flag == 2):
+            if (self.video.aff_flag == 2):#finished affine
                 self.currentState = STATE_CODE_CCACFP
         
         
@@ -147,6 +149,8 @@ class StateManager():
         
         """
         if (self.currentState == STATE_CODE_CCACFP):
+            #CameraCalibrationAndCalculateFindNextPokmon
+            
             #TODO: Send the calibration command.
             
             #self.video.blobDetector();
@@ -158,13 +162,13 @@ class StateManager():
                     self.currentState = STATE_CODE_END
                 else:                                  #If found some pokmon:
                     self.currentState = STATE_CODE_OG
-            else:
-                pass
+            #else:
+            #    pass
         
 
         #Keep finding the location.
         """
-
+        State_OpenGripper
         -----
         |    |
         |   \/
@@ -173,31 +177,60 @@ class StateManager():
         """
         if (self.currentState == STATE_CODE_OG):
             if (self.state_OG.iOpenGripper(self.rexarm) == 1):
+                print('[msg] Gripper opened.')
                 self.currentState = STATE_CODE_MTFT
-            else:
+            else:# gripper not fully opened
                 pass
-
+        '''
+        State_MoveToFinalTarget
+        MTFT
+        '''
 
         if (self.currentState == STATE_CODE_MTFT):
+            print('[msg] Move to target')
+            
+            #initial
+            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_CI):
+                self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation() #TODO
+                #self.state_WTFT_CI.calculate()
+                self.state_MTFT.MT_currentstate = STATE_CODE_MT_GTNWPT#go to next way point
 
-            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):
+            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_GTNWPT):
+                self.currentState = STATE_CODE_CP
+            
+            elif (self.state_MTFT.MT_currentstate == STATE_CODE_MT_END):# the last pokemon
                 self.state_MTFT.MT_currentstate = STATE_CODE_MT_CI
                 self.currentState = STATE_CODE_CP
 
-            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_CI):
-                self.state_MTFT.state_MTFT_iSetCurrentLocationAsInitialLocation(); #TODO
-                self.state_WTFT_CI.calculate();
-                self.state_MTFT.MT_currentstate = STATE_CODE_MT_GTNWPT
 
-            if (self.state_MTFT.MT_currentstate == STATE_CODE_MT_GTNWPT):
-                self.currentState =STATE_CODE_CP
+        '''
+        catch pokemon
+        CP
+        '''
+        if (self.currentState == STATE_CODE_CP):
 
-
-
-
+            #if finished
+            self.currentState = STATE_CODE_MTB
 
 
-        
+        '''
+        State_MoveToBall
+        MTB
+        '''
+        if (self.currentState == STATE_CODE_MTB):
+
+            #if finished
+            self.currentState = STATE_CODE_RP
+
+
+        '''
+        State_ReleashPokmon
+        RP 
+        '''
+        if (self.currentState == STATE_CODE_RP):
+
+            #if finished
+            self.currentState = STATE_CODE_CCACFP
 
         
 
@@ -249,7 +282,7 @@ class State_MoveToFinalTarget():
     Name: state_MTFT_iCheckIfArrived
     Function: check if the current arm has arrived the final target.
     """
-    def state_MTFT_iSetCurrentLocationAsInitialLocation():
+    def state_MTFT_iSetCurrentLocationAsInitialLocation(self):
         pass
 
 
@@ -304,17 +337,17 @@ class State_MoveToFinalTarget():
 
 
 
-class State_MTFT_CalculateIntermediate():
+class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
     def __init__(self,wtft):
         pass
     def calculate():
         pass
 
-class State_MTFT_GoToNextWaypoint():
+class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
     def __init__(self, rexarm, wtft):
         pass
 
-class State_MTFT_End():
+class State_MTFT_End():# change state
     def __init__(self, rexarm):
         pass
 

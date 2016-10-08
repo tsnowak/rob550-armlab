@@ -578,8 +578,8 @@ class Rexarm():
                 #print('gripper closed')
                 self.gripper_status = 2
 
-        print('[STATUS]gripper angle: '),
-        print self.joint_angles_fb[4]*R2D
+        #print('[STATUS]gripper angle: '),
+        #print self.joint_angles_fb[4]*R2D
         self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
         self.cmd_publish();
 
