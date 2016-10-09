@@ -54,6 +54,8 @@ STATE_CODE_MTB_END = 43
 
 
 
+REACHABLE_MAX_DISTANCE  = 280
+
 """State Class"""
 class StateManager():
 
@@ -179,7 +181,7 @@ class StateManager():
             #self.video.blobDetector();
 
             #Check if the camera has finished calculation.
-            print([self.video.whetherFinishedCam, self.video.numPokRemain])
+            #print([self.video.whetherFinishedCam, self.video.numPokRemain])
             if (self.video.whetherFinishedCam == 1):#If finished 
                 if (self.video.numPokRemain  == 0):  #IF no pokmon is remained.
                     self.currentState = STATE_CODE_END
@@ -207,6 +209,8 @@ class StateManager():
         """
 
         if (self.currentState == STATE_CODE_OG):
+            self.rexarm.iSetSpeed(0.4);
+            self.rexarm.iSetTorque(0.7);
             if (self.state_OG.iOpenGripper(self.rexarm) == 1):
                 print('[msg] Gripper opened.')
                 self.currentState = STATE_CODE_MTFT
@@ -363,6 +367,9 @@ class StateManager():
          RAP ---> CCAFNP
         '''
         if (self.currentState == STATE_CODE_RAP):
+            
+            self.rexarm.iSetSpeed(1.0)
+            self.rexarm.iSetTorque(1.0)
 
             if (self.state_RAP.iResetArmPosition() == True):
 
@@ -534,6 +541,16 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
         
 
 
+        """
+        Judge if the distance is reachable, if yes, then go ahead. if no, then use the largest possible radius 
+        """
+
+        r_current = math.sqrt(self.mtft.finaltarget[0]**2 + self.mtft.finaltarget[1]**2)
+        if (r_current >= REACHABLE_MAX_DISTANCE):
+            self.mtft.finaltarget[0] = self.mtft.finaltarget[0] / r_current * REACHABLE_MAX_DISTANCE
+            self.mtft.finaltarget[1] = self.mtft.finaltarget[1] / r_current * REACHABLE_MAX_DISTANCE
+
+
         self.mtft.state_MTFT_iSetCurrentLocationAsInitialLocation(self.rexarm);
         
         self.mtft.intermediatelocationnumber = 0
@@ -543,7 +560,7 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
 
         x_3 = self.mtft.finaltarget[0]
         y_3 = self.mtft.finaltarget[1]
-        z_3 = 35;
+        z_3 = 45;#35
         phi_3 = self.rexarm.rexarm_IK_CatchAnglePlaner([x_3,y_3,z_3])
         
         print("[Msg]: Catching Potion"),
@@ -569,8 +586,8 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
         self.mtft.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
         self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
 
-        self.mtft.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
-        self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
+        #self.mtft.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
+        #self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
 
         self.mtft.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
         self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
@@ -594,8 +611,12 @@ class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
         configuration = self.iCalculateInverseKinematics()
         if (configuration[0] == 0):
             #TODO: Fix error handler.
-            print("[ERROR]:Inreachable!!!")    
-            
+            """
+            print("[ERROR]:Inreachable!!!=========================================") 
+
+            self.mtft.MTFT_currentstate = STATE_CODE_MTFT_END  
+            pass
+            """
             exit(1)
 
 
@@ -808,6 +829,17 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         self.mtb.finaltarget  = self.video.nextLocationofPokmon  #The data structure is [x,y]
        
 
+        """
+        Judge if the distance is reachable, if yes, then go ahead. if no, then use the largest possible radius 
+        """
+
+        r_current = math.sqrt(self.mtb.finaltarget[0]**2 + self.mtb.finaltarget[1]**2)
+        if (r_current >= REACHABLE_MAX_DISTANCE):
+            self.mtb.finaltarget[0] = self.mtb.finaltarget[0] / r_current * REACHABLE_MAX_DISTANCE
+            self.mtb.finaltarget[1] = self.mtb.finaltarget[1] / r_current * REACHABLE_MAX_DISTANCE
+
+
+
 
         self.mtb.state_MTB_iSetCurrentLocationAsInitialLocation(self.rexarm);
        
@@ -822,11 +854,11 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         phi_1  = self.rexarm.rexarm_IK_CatchAnglePlaner([x_1,y_1,z_1])
         
 
-        r_init = math.sqrt( x_1**2 + y_1**2 );
-        x_2 = x_1 *1.0 / r_init * 100;
-        y_2 = y_1 *1.0 / r_init * 100;
-        z_2 = 220
-        phi_2 = PI/2
+        #r_init = math.sqrt( x_1**2 + y_1**2 );
+        #x_2 = x_1 *1.0 / r_init * 100;
+        #y_2 = y_1 *1.0 / r_init * 100;
+        #z_2 = 220
+        #phi_2 = PI/2
 
         #Decision on which half ball to go.
         if y_1 >0:
@@ -840,8 +872,8 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         phi_3 = PI/2
 
         y_4 = y_3
-        x_4 = -270
-        z_4 = 50
+        x_4 = -220
+        z_4 = 90#130
         phi_4 = PI/2
 
         self.mtb.intermediatelocation=[]
@@ -849,8 +881,8 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         self.mtb.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
         self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
 
-        self.mtb.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
-        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
+#        self.mtb.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
+#        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
 
         self.mtb.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
         self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
@@ -862,6 +894,7 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
 
 
 class State_MTB_GoToNextWaypoint():#cmd, check if arrived
+
     def __init__(self, rexarm, mtb):
         self.rexarm = rexarm;
         self.mtb = mtb
@@ -874,16 +907,22 @@ class State_MTB_GoToNextWaypoint():#cmd, check if arrived
             return isFinished
 
         #IK
+
+        
         configuration = self.iCalculateInverseKinematics()
         if (configuration[0] == 0):
             #TODO: Fix error handler.
-            print("[ERROR]:Inreachable!!!")   
-            exit(1);
-       
+            """
+            print("[ERROR]:Inreachable!!!=========================================") 
 
 
 
 
+            self.mtb.MTB_currentstate = STATE_CODE_MTB_END  
+            pass
+            """
+            exit(1)
+        
 
         #set joints
         self.rexarm.iSetJointAngle(0,configuration[1][0])

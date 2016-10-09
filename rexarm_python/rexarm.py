@@ -41,7 +41,7 @@ Gripper Constant
 GRIPPER_LASTCOMMAND_TOOPEN = 1
 GRIPPER_LASTCOMMAND_TOCLOSE = 0
 
-GRIPPER_ALARMCLOCK_TIMEOUT = 100
+GRIPPER_ALARMCLOCK_TIMEOUT = 200
 
 """ Rexarm Class """
 class Rexarm():
@@ -121,6 +121,8 @@ class Rexarm():
             # you SHOULD change this to contorl each joint speed separately 
             cmd.speed = self.speed
             cmd.max_torque = self.max_torque
+            if i == 3:
+                cmd.speed = 0.8
             if i==4:
                 cmd.speed = 0.8
                 cmd.max_torque = 0.8
@@ -418,7 +420,7 @@ class Rexarm():
 
 #        print([configuration_3[0]*R2D,configuration_3[1]*R2D,configuration_3[2]*R2D,configuration_3[3]*R2D])
 
- #       print([configuration_4[0]*R2D,configuration_4[1]*R2D,configuration_4[2]*R2D,configuration_4[3]*R2D])
+#       print([configuration_4[0]*R2D,configuration_4[1]*R2D,configuration_4[2]*R2D,configuration_4[3]*R2D])
         print("[IK]: validity:"),
         print(validity_1), 
         print(validity_2),
@@ -562,7 +564,7 @@ class Rexarm():
     def rexarm_gripper_grab(self,isGrab):
         self.gripper_status = 0
 
-        if (isGrab == 0 and self.gripper_lastcommand == GRIPPER_LASTCOMMAND_TOOPEN):
+        if (isGrab == 0 and self.gripper_lastcommand == GRIPPER_LASTCOMMAND_TOOPEN):# if close command, then start timer
             self.ac4gripper.alarmclock_start(GRIPPER_ALARMCLOCK_TIMEOUT);
             print("[Gripper_Msg]: Alarm Setted")
 
@@ -570,7 +572,7 @@ class Rexarm():
         if (isGrab == 1): #open
             self.ui.sldrGrip1.setProperty("value",26)
             self.ui.rdoutGrip1.setText(str(26)) 
-            if self.joint_angles_fb[4]*R2D > 20: #set a tolerance, chagne status to "opened"
+            if self.joint_angles_fb[4]*R2D > 22: #set a tolerance, chagne status to "opened"
                 #print('gripper opened')
                 self.gripper_status = 1
             
@@ -614,18 +616,24 @@ class Rexarm():
 
             #set tolerance, change status to "closed"
             #also change to closed when the torque exceed max
-            if self.joint_angles_fb[4]*R2D < -24:
+            if self.joint_angles_fb[4]*R2D < -24: # done closing
                 #print('gripper closed')
                 self.gripper_status = 2
                 self.ac4gripper.alarmclock_stop();
                 print("[Gripper_Msg]: Successfully closed, clock stopped.")
+
+
+                self.ui.sldrGrip1.setProperty("value",-26)
+                self.ui.rdoutGrip1.setText(str(-26))
+                self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+                self.cmd_publish();
 
                 self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOCLOSE
                 return self.gripper_status
 
 
             
-            else:
+            else:# angle is still too big
             
             #Check time out
                 if self.ac4gripper.alarmclock_checktimesup():
