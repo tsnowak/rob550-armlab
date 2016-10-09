@@ -67,7 +67,7 @@ class Video():
         """
         self.numPokRemain  = 0
         self.whetherFinishedCam = 0
-        self.nextLocationofPokmon = (0,0)
+        self.nextLocationofPokmon = [0,0]
 
         """ 
         Affine Calibration Variables 
@@ -268,7 +268,7 @@ class Video():
                     radius = int(radius)
                     #cv2.drawContours(cpy, contours, -1, (255,255,255), 3)
                     #cv2.circle(cpy,center,radius,(255,255,255),2)
-                    if radius > 12 and radius < 30:
+                    if radius > 12 and radius < 38:
                         tmp_center = np.dot(self.aff_matrix, np.array([[center[0]],[center[1]],[1]]))
                         center = (int(tmp_center[0]),int(tmp_center[1]))
                         self.location.append(center)
@@ -290,7 +290,8 @@ class Video():
 
         if len(self.location) != 0:
             self.numPokRemain = len(self.location)
-            self.nextLocationofPokmon = self.location[(self.identity-1)]
+            self.nextLocationofPokmon[0] = self.location[(self.identity-1)][0]
+            self.nextLocationofPokmon[1] = self.location[(self.identity-1)][1]
             self.whetherFinishedCam = 1
             print "Pokemon to Pursue: ",
             print self.identity,
@@ -302,7 +303,7 @@ class Video():
             print self.distance
         else:
             self.numPokRemain = 0
-            self.nextLocationofPokmon = (0,0)
+            self.nextLocationofPokmon = [0,0]
             self.whetherFinishedCam = 1
 
     def affineTransform(self):

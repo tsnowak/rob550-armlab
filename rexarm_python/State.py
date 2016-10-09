@@ -178,7 +178,7 @@ class StateManager():
             
             #TODO: Send the calibration command.
             
-            #self.video.blobDetector();
+            self.video.blobDetector();
 
             #Check if the camera has finished calculation.
             #print([self.video.whetherFinishedCam, self.video.numPokRemain])
