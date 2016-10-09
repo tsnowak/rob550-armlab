@@ -35,6 +35,30 @@ GLOBALDFILENAME_RECSLOW = "../data/DATAFILE_RECSLOW.csv"
 GLOBALDFILENAME_RECFAST = "../data/DATAFILE_RECFAST.csv"
 
 
+STATE_CODE_INIT  = 1
+STATE_CODE_CCACFP = 2
+STATE_CODE_OG = 3
+STATE_CODE_MTFT = 4
+STATE_CODE_CP = 5
+STATE_CODE_MTB = 6
+STATE_CODE_RP = 7
+STATE_CODE_END = 8
+STATE_CODE_RAP = 9
+
+STATE_CODE_MTFT_CI = 41
+STATE_CODE_MTFT_GTNWPT = 42
+STATE_CODE_MTFT_END = 43
+
+
+
+STATE_CODE_MTB_CI = 41
+STATE_CODE_MTB_GTNWPT = 42
+STATE_CODE_MTB_END = 43
+
+
+
+
+
 class Gui(QtGui.QMainWindow):
     """ 
     Main GUI Class
@@ -42,6 +66,7 @@ class Gui(QtGui.QMainWindow):
     the GUI and functions
     """
     def __init__(self,parent=None):
+
         QtGui.QWidget.__init__(self,parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -51,12 +76,12 @@ class Gui(QtGui.QMainWindow):
         self.video = Video(cv2.VideoCapture(0))
 
         """
-        Zhentao Added Here.
+        Zhentao added Here.
         Initialize the statemachine.
         """
 
-        self.statemanager = StateManager(self.rex);
-        print(StateManager)
+        self.statemanager = StateManager(self.rex,self.video);
+        
         """ Other Variables """
         self.last_click = np.float32([0,0])
 
@@ -110,6 +135,12 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser3.setText("Reset Position")
         self.ui.btnUser3.clicked.connect(self.rex.iResetPosition)
 
+        self.ui.btnUser4.setText("OpenGripper")
+        self.ui.btnUser4.clicked.connect(self.iTestGripperOpen)
+
+        self.ui.btnUser5.setText("CloseGripper")
+        self.ui.btnUser5.clicked.connect(self.iTestGripperClose)
+
         """
         
         self.ui.btnUser2.setText("STEP1: Reset Position")
@@ -140,7 +171,10 @@ class Gui(QtGui.QMainWindow):
         
         """
 
+
     def play(self):
+        self.statemanager.Statemanager_MoveToNextState()
+
 
         """ 
         Play Funtion
@@ -182,6 +216,11 @@ class Gui(QtGui.QMainWindow):
             self.ui.rdoutMousePixels.setText("(%.0f,%.0f)" % (x,y))
             if (self.video.aff_flag == 2):
                 """
+                ZHENTAO: STATE CONTROL: after finishing the camera calibration, move to the next states.
+                """
+                
+
+                """
                 ######################################## 
                 TED added world_coords label to frame
                 ######################################## 
@@ -195,29 +234,29 @@ class Gui(QtGui.QMainWindow):
         """
         Set button avalibity.
         """
-#        self.iPrintStatusTerminal()########################################Here should be activated.
-#        self.iSetButtonAbility()
+        #self.iPrintStatusTerminal()########################################Here should be activated.
+        self.iSetButtonAbility();
+        self.iUpdateStatusBar();
 
         """ 
         Updates status label when rexarm playback is been executed.
         This will be extended to include other appropriate messages
         """ 
-
-        #if(self.rex.plan_status == 1):
-        #    self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
-        #                            %(self.rex.wpt_number + 1))
-        #if (self.rex.plan_status == 0 and self.rex.way_total == 0):
-        #    self.ui.rdoutStatus.setText("Click [Train Begin] button to start train.")
-
-
-        #if (self.rex.plan_status == 2):
-        #    self.ui.rdoutStatus.setText("Click [Get Way Point] button to record way point. Click [Stop Recording] to stop recording.")
-        #if (self.rex.plan_status == 0 and self.rex.way_total != 0 and self.rex.way_number == 0):
-        #    self.ui.rdoutStatus.setText("Click [Replay Wholeway] to play the whole way. Click [Save Data] to Save the data.")
-        #if (self.rex.plan_status == 5):
-        #    self.ui.rdoutStatus.setText("Click [Play Stop] to stop")
+        """
+        if(self.rex.plan_status == 1):
+            self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
+                                    %(self.rex.wpt_number + 1))
+        if (self.rex.plan_status == 0 and self.rex.way_total == 0):
+            self.ui.rdoutStatus.setText("Click [Train Begin] button to start train.")
 
 
+        if (self.rex.plan_status == 2):
+            self.ui.rdoutStatus.setText("Click [Get Way Point] button to record way point. Click [Stop Recording] to stop recording.")
+        if (self.rex.plan_status == 0 and self.rex.way_total != 0 and self.rex.way_number == 0):
+            self.ui.rdoutStatus.setText("Click [Replay Wholeway] to play the whole way. Click [Save Data] to Save the data.")
+        if (self.rex.plan_status == 5):
+            self.ui.rdoutStatus.setText("Click [Play Stop] to stop")
+        """
         """###############################################
         Frank Added Here
         ###############################################"""
@@ -250,17 +289,15 @@ class Gui(QtGui.QMainWindow):
         self.ui.rdoutElbow.setText(str(self.ui.sldrElbow.value()))
         self.ui.rdoutWrist.setText(str(self.ui.sldrWrist.value()))
         self.ui.rdoutGrip1.setText(str(self.ui.sldrGrip1.value()))
-        # use value of gripper2 to show load of gripper1
-        #TODO: detect the load elsewhere
-        self.ui.rdoutGrip2.setText(str(self.rex.load_fb[4]))   
+        
         self.ui.rdoutTorq.setText(str(self.ui.sldrMaxTorque.value()) + "%")
         self.ui.rdoutSpeed.setText(str(self.ui.sldrSpeed.value()) + "%")
         self.rex.max_torque = self.ui.sldrMaxTorque.value()/100.0
         self.rex.speed = self.ui.sldrSpeed.value()/100.0
-        self.rex.joint_angles[0] = self.ui.sldrBase.value()*D2R
-        self.rex.joint_angles[1] = self.ui.sldrShoulder.value()*D2R
-        self.rex.joint_angles[2] = self.ui.sldrElbow.value()*D2R
-        self.rex.joint_angles[3] = self.ui.sldrWrist.value()*D2R
+        #self.rex.joint_angles[0] = self.ui.sldrBase.value()*D2R
+        #self.rex.joint_angles[1] = self.ui.sldrShoulder.value()*D2R
+        #self.rex.joint_angles[2] = self.ui.sldrElbow.value()*D2R
+        #elf.rex.joint_angles[3] = self.ui.sldrWrist.value()*D2R
         self.rex.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
         self.rex.cmd_publish()
 
@@ -290,7 +327,12 @@ class Gui(QtGui.QMainWindow):
             
             ik_wcoords = np.dot(self.video.aff_matrix, np.array([[x-MIN_X],[y-MIN_Y],[1]]))
            
-            self.iTestIK(ik_wcoords[0], ik_wcoords[1], 40,4*PI/4)	
+            #self.iTestIK(ik_wcoords[0], ik_wcoords[1], 40,4*PI/4)
+            """
+            #TODO: Temperary here to take the place of Camera that Ted will write.
+            """
+            self.iMimicCamera(ik_wcoords[0], ik_wcoords[1]);
+
  
         """ If affine calibration is being performed """
         if (self.video.aff_flag == 1):
@@ -504,7 +546,7 @@ class Gui(QtGui.QMainWindow):
         return [self.rex.joint_angles_fb[0],
                 self.rex.joint_angles_fb[1],
                 self.rex.joint_angles_fb[2],
-                self.rex.joint_angles_fb[3] ]
+                self.rex.joint_angles_fb[3]]
 
     def iCheckIfArrived(self, target,errorTorrance):
         sensorData = self.iReplayWPT_GetSensorData()
@@ -580,7 +622,16 @@ class Gui(QtGui.QMainWindow):
     """
     Button Availibity
     """
+
     def iSetButtonAbility(self):
+
+        if (self.statemanager.currentState == STATE_CODE_INIT):
+            self.ui.btnUser1.setEnabled(1);
+        else:
+            self.ui.btnUser1.setEnabled(0);
+
+
+    """
         if (self.rex.plan_status == 0):
             self.ui.btnUser4.setEnabled(True)
             self.ui.btnUser5.setEnabled(False)
@@ -592,7 +643,7 @@ class Gui(QtGui.QMainWindow):
             self.ui.btnUser5.setEnabled(True)
             self.ui.btnUser6.setEnabled(True)
 
-        """Replay way"""
+        '''Replay way'''
 
         if (self.rex.plan_status == 0 and self.rex.way_total != 0):
             self.ui.btnUser7.setEnabled(True)
@@ -600,9 +651,9 @@ class Gui(QtGui.QMainWindow):
             self.ui.btnUser7.setEnabled(False)
         
 
-        """
+        '''
         replay way point.
-        """
+        '''
         if (self.rex.plan_status == 0 and self.rex.wpt_total != 0):
             self.ui.btnUser8.setEnabled(True)
             self.ui.btnUser9.setEnabled(True)
@@ -610,21 +661,22 @@ class Gui(QtGui.QMainWindow):
             self.ui.btnUser8.setEnabled(False)
             self.ui.btnUser9.setEnabled(False)
 
-        """
+        '''
         save data.
-        """
+        '''
         if (self.rex.plan_status == 0 and self.rex.way_total != 0):
             self.ui.btnUser11.setEnabled(True)
         else:
             self.ui.btnUser11.setEnabled(False)
         
-        """
+        '''
         Load Data
-        """
+        '''
         if (self.rex.plan_status == 0):
             self.ui.btnUser12.setEnabled(True)
         else:
             self.ui.btnUser12.setEnabled(False)
+    """
 
 
 
@@ -667,7 +719,7 @@ class Gui(QtGui.QMainWindow):
         self.ui.rdoutX.setText(str(float("{0:.2f}".format(self.rex.P0[0] ))));
         self.ui.rdoutY.setText(str(float("{0:.2f}".format(self.rex.P0[1] ))));
         self.ui.rdoutZ.setText(str(float("{0:.2f}".format(self.rex.P0[2] ))));
-        self.ui.rdoutT.setText(str(float("{0:.2f}".format(self.rex.T ))));
+        self.ui.rdoutT.setText(str(float("{0:.2f}".format(self.rex.T * R2D))));
 
 
     # function which sets the self.rex.joint_angles for each joint to the values
@@ -878,9 +930,25 @@ class Gui(QtGui.QMainWindow):
     """
     A function to test the IK, not need for final competition.
     """
+
+    def iMimicCamera(self, x, y):
+        
+        print("[Msg]: MimicCam is called.")
+        
+        self.video.numPokRemain = 1
+        self.video.whetherFinishedCam = True;
+        self.video.nextLocationofPokmon = [x,y];
+
+        """
+        self.numPokRemain  = 0
+        self.whetherFinishedCam = False;
+        self.nextLocationofPokmon = [0,0];
+        """
+
+
     def iTestIK(self,x,y,z,phi):
         phi = self.rex.rexarm_IK_CatchAnglePlaner([x,y,z])
-        
+
         print("[Msg]: IK is called.")
         [validity_1, IK_conf_1, validity_2, IK_conf_2, validity_3,IK_conf_3,validity_4, IK_conf_4] = self.rex.rexarm_IK([x,y,z,phi],1);
 
@@ -901,6 +969,51 @@ class Gui(QtGui.QMainWindow):
     """
     def iTestSM(self):
         self.statemanager.StateManager_Test();
+
+
+    """
+    Update the name of the state to the state bar.
+    """
+
+    def iUpdateStatusBar(self):
+        if (self.statemanager.currentState == STATE_CODE_INIT):
+            self.ui.rdoutStatus.setText("STATE_CODE_INIT")
+        if (self.statemanager.currentState == STATE_CODE_RP):
+            self.ui.rdoutStatus.setText("STATE_CODE_RP")
+        if (self.statemanager.currentState == STATE_CODE_MTB):
+            self.ui.rdoutStatus.setText("STATE_CODE_MTB")
+        if (self.statemanager.currentState == STATE_CODE_MTFT):
+            self.ui.rdoutStatus.setText("STATE_CODE_MTFT")
+        if (self.statemanager.currentState == STATE_CODE_CP):
+            self.ui.rdoutStatus.setText("STATE_CODE_CP")
+        if (self.statemanager.currentState == STATE_CODE_OG):
+            self.ui.rdoutStatus.setText("STATE_CODE_OG")
+        if (self.statemanager.currentState == STATE_CODE_CCACFP):
+            self.ui.rdoutStatus.setText("STATE_CODE_CCACFP")
+        if (self.statemanager.currentState == STATE_CODE_END):
+            self.ui.rdoutStatus.setText("STATE_CODE_END")
+        if (self.statemanager.currentState == STATE_CODE_RAP):
+            self.ui.rdoutStatus.setText("STATE_CODE_RAP")
+            
+            """
+            STATE_CODE_INIT  = 1
+            STATE_CODE_CCACFP = 2
+            STATE_CODE_OG = 3
+            STATE_CODE_MTFT = 4
+            STATE_CODE_CP = 5
+            STATE_CODE_MTB = 6
+            STATE_CODE_RP = 7
+            STATE_END = 8
+
+
+            """
+
+    def iTestGripperOpen(self):
+        self.rex.rexarm_gripper_grab(1)
+
+    def iTestGripperClose(self):
+        self.rex.rexarm_gripper_grab(0)
+
 
 def main():
     app = QtGui.QApplication(sys.argv)

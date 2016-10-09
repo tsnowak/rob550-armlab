@@ -61,6 +61,13 @@ class Video():
         self.scaling_factor = (0,0)
         self.boundary_mask = np.zeros((1280,960,3), np.uint8)
 
+        """
+        Statemachine trigger.
+
+        """
+        self.numPokRemain  = 0
+        self.whetherFinishedCam = False;
+        self.nextLocationofPokmon = [0,0];
 
         """ 
         Affine Calibration Variables 
@@ -81,6 +88,7 @@ class Video():
         """                      
         Capture frame, convert to RGB, and return opencv image      
         """
+
         ret, frame=self.capture.read()
         if(ret==True):
             self.currentFrame=cv2.cvtColor(frame, cv2.COLOR_BAYER_GR2RGB)
@@ -200,6 +208,7 @@ class Video():
         Implement your color blob detector here.  
         You will need to detect 5 different color blobs
         """
+
         # don't try to do anything unless the affine transform has been performed
         if self.aff_flag == 2:
                 
@@ -288,7 +297,6 @@ class Video():
             print self.location[self.identity-1],
             print "\tPokemon Distance from Center: ",
             print self.distance
-
 
     def affineTransform(self):
         """

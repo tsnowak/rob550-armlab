@@ -2,6 +2,7 @@ import lcm
 import time
 import numpy as np
 import math
+from AlarmClock import AlarmClock
 
 from lcmtypes import dynamixel_command_t
 from lcmtypes import dynamixel_command_list_t
@@ -14,18 +15,33 @@ R2D = 180.0/3.141592
 ANGLE_TOL = 2*PI/180.0 
 
 
+LOAD_DETECTION = 1 # 0 no load detection, 1 load detection
+THRESHOLD_LOAD = 0.2# if exceed this value, the gripper is closed
+
+
+
 """
 FK Constant
 """
 DH1_D = 116
 DH3_A = 100
-DH4_A = 110
+DH4_A = (110-15)
 
 
 L1 = DH1_D
 L2 = DH3_A
 L3 = DH3_A
 L4 = DH4_A
+
+
+
+"""
+Gripper Constant
+"""
+GRIPPER_LASTCOMMAND_TOOPEN = 1
+GRIPPER_LASTCOMMAND_TOCLOSE = 0
+
+GRIPPER_ALARMCLOCK_TIMEOUT = 200
 
 """ Rexarm Class """
 class Rexarm():
@@ -79,6 +95,16 @@ class Rexarm():
 
         self.P0 = [0] * 3;
         self.T = 0
+
+        #initial
+        '''gripper'''
+        self.gripper_cmd = 1      #command, 0: to close, 1: to open
+        self.gripper_largeTor = 0 #turns 1 onces torque exceeds max valuem, back to 0 when command changes
+        self.gripper_status = 0   # 0: still moving, 1: opened, 2: closed
+        self.get_gripper_status = 0 #3 return from iGripper_grab function
+
+        self.ac4gripper = AlarmClock()
+
     def cmd_publish(self):
         """ 
         Publish the commands to the arm using LCM. 
@@ -95,10 +121,16 @@ class Rexarm():
             # you SHOULD change this to contorl each joint speed separately 
             cmd.speed = self.speed
             cmd.max_torque = self.max_torque
+            if i == 3:
+                cmd.speed = 0.8
+            if i==4:
+                cmd.speed = 0.8
+                cmd.max_torque = 0.8
+
             #print cmd.position_radians
             msg.commands.append(cmd)
         self.lc.publish("ARM_COMMAND",msg.encode())
-    
+        
     def get_feedback(self):
         """
         LCM Handler function
@@ -149,8 +181,11 @@ class Rexarm():
         elif self.joint_angles[3]*R2D < -125.39:
             self.joint_angles[3] = -125.39*D2R
 
-        ## TODO: IMPLEMENT GRIP LIMITS ##
-
+        ## DONE: IMPLEMENT GRIP LIMITS ##
+        if self.joint_angles[4]*R2D > 27:
+            self.joint_angles[4] = 26*D2R
+        elif self.joint_angles[4]*R2D < -32:
+            self.joint_angles[4] = -32*D2R    
         #pass
 
     def plan_command(self):
@@ -168,6 +203,8 @@ class Rexarm():
         and the link to return the position for
         returns a 4-tuple (x, y, z, phi) representing the pose of the 
         desired link
+
+        return in format [x,y,z,phi] with unit[mm,mm,mm,rad]
         """
         
 
@@ -196,8 +233,8 @@ class Rexarm():
         self.P0[1] = Pbase[1][0]
         self.P0[2] = Pbase[2][0]
 
-        self.T =  (- 1 * (angles[1] + angles[2] + angles[3] ) - PI/2 ) * R2D;
-
+        self.T =  (- 1 * (angles[1] + angles[2] + angles[3] )  ) ;
+        return [self.P0[0],self.P0[1],self.P0[2],self.T]
 
 
 
@@ -258,7 +295,7 @@ class Rexarm():
         r = math.sqrt(x**2 + y**2)
 
         """
-
+        ^
         |Angle[Rad]
         |(50,PI/2 + 122 * D2R)
         |\ 
@@ -383,7 +420,7 @@ class Rexarm():
 
 #        print([configuration_3[0]*R2D,configuration_3[1]*R2D,configuration_3[2]*R2D,configuration_3[3]*R2D])
 
- #       print([configuration_4[0]*R2D,configuration_4[1]*R2D,configuration_4[2]*R2D,configuration_4[3]*R2D])
+#       print([configuration_4[0]*R2D,configuration_4[1]*R2D,configuration_4[2]*R2D,configuration_4[3]*R2D])
         print("[IK]: validity:"),
         print(validity_1), 
         print(validity_2),
@@ -514,12 +551,169 @@ class Rexarm():
     """
     def iResetPosition(self):
 
-        self.iSetTorque(0.5)
-        self.iSetSpeed(0.2)
-        self.cmd_publish();
+        #self.iSetTorque(0.5)
+        #self.iSetSpeed(0.2)
+        #self.cmd_publish();
 
         self.iSetJointAngle(0,0)
         self.iSetJointAngle(1,0)
         self.iSetJointAngle(2,0)
         self.iSetJointAngle(3,0)
         self.cmd_publish()
+
+    def rexarm_gripper_grab(self,isGrab):
+        self.gripper_status = 0
+
+        if (isGrab == 0 and self.gripper_lastcommand == GRIPPER_LASTCOMMAND_TOOPEN):# if close command, then start timer
+            self.ac4gripper.alarmclock_start(GRIPPER_ALARMCLOCK_TIMEOUT);
+            print("[Gripper_Msg]: Alarm Setted")
+
+
+        if (isGrab == 1): #open
+            self.ui.sldrGrip1.setProperty("value",26)
+            self.ui.rdoutGrip1.setText(str(26)) 
+            if self.joint_angles_fb[4]*R2D > 22: #set a tolerance, chagne status to "opened"
+                #print('gripper opened')
+                self.gripper_status = 1
+            
+
+            self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+            self.cmd_publish();
+
+           
+            self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOOPEN
+
+            print("Gripper Opened")
+            return self.gripper_status
+
+        else: #close
+            '''
+            #load detection
+            if(self.rex.load_fb[4] < 0.36 and self.rex.gripper_largeTor != 1): #normal torque
+                self.ui.sldrGrip1.setProperty("value",-29)
+                self.ui.rdoutGrip1.setText(str(-29))
+            else: #torque too large, then fix angle at that point
+                self.rex.gripper_largeTor = 1
+                self.ui.sldrGrip1.setProperty("value",self.rex.joint_angles_fb[4]*R2D-1)
+                self.ui.rdoutGrip1.setText(str(self.rex.joint_angles_fb[4]*R2D-1))
+            
+            #set tolerance, change status to "closed"
+            #also change to closed when the torque exceed max
+            if self.rex.joint_angles_fb[4]*R2D < -18 or self.rex.gripper_largeTor == 1: 
+                #print('gripper closed')
+                self.rex.gripper_status = 2
+            '''
+            # no load detection                
+            self.ui.sldrGrip1.setProperty("value",-29)
+            self.ui.rdoutGrip1.setText(str(-29))
+            """
+            print('==========Gripper Status==========')
+            print("Current Angle:\t"),
+            print(self.joint_angles_fb[4]*R2D)
+            print("Currnet Load:\t"),
+            print(self.load_fb[4])
+            """
+
+            #set tolerance, change status to "closed"
+            #also change to closed when the torque exceed max
+            if self.joint_angles_fb[4]*R2D < -24: # done closing
+                #print('gripper closed')
+                self.gripper_status = 2
+                self.ac4gripper.alarmclock_stop();
+                print("[Gripper_Msg]: Successfully closed, clock stopped.")
+
+
+                self.ui.sldrGrip1.setProperty("value",-26)
+                self.ui.rdoutGrip1.setText(str(-26))
+                self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+                self.cmd_publish();
+
+                self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOCLOSE
+                return self.gripper_status
+
+
+            
+            else:# angle is still too big
+            
+            #Check time out
+                if self.ac4gripper.alarmclock_checktimesup():
+                    self.gripper_status = 2
+                    self.ac4gripper.alarmclock_stop();
+                    print("[Gripper_Msg]: Not fully closed, but timeout")
+
+
+                #print('[STATUS]gripper angle: '),
+                #print self.joint_angles_fb[4]*R2D
+                self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+                self.cmd_publish();
+
+                self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOCLOSE
+
+                return self.gripper_status
+
+
+
+    """
+    def rexarm_gripper_grab(self,isGrab):
+        self.gripper_status = 0
+
+        if (isGrab == 1): #open
+            self.ui.sldrGrip1.setProperty("value",26)
+            self.ui.rdoutGrip1.setText(str(26)) 
+            if self.joint_angles_fb[4]*R2D > 20: #set a tolerance, chagne status to "opened"
+                #print('gripper opened')
+                self.gripper_status = 1
+
+        else: #close
+            if LOAD_DETECTION == 1:
+                #load detection
+                if(math.fabs(self.load_fb[4]) < THRESHOLD_LOAD  and self.gripper_largeTor != 1): #normal torque
+                    self.ui.sldrGrip1.setProperty("value",-29)
+                    self.ui.rdoutGrip1.setText(str(-29))
+                else: #torque too large, then fix angle at that point
+                    if self.joint_angles_fb[4]*R2D < 0:
+                        self.gripper_largeTor = 1
+                        if self.joint_angles_fb[4] > -20:
+                            self.ui.sldrGrip1.setProperty("value",self.joint_angles_fb[4]*R2D-7)
+                            self.ui.rdoutGrip1.setText(str(self.joint_angles_fb[4]*R2D-7))
+                        else:                            
+                            self.ui.sldrGrip1.setProperty("value",self.joint_angles_fb[4]*R2D-3)
+                            self.ui.rdoutGrip1.setText(str(self.joint_angles_fb[4]*R2D-3))
+                '''
+                print('=======LOAD====='),
+                print(self.load_fb[4]),
+                print('  angle_fb: '),
+                print(self.joint_angles_fb[4]*R2D),
+                print(' ' ),
+                print(self.gripper_largeTor)
+                '''
+                #set tolerance, change status to "closed"
+                #also change to closed when the torque exceed max
+                if self.joint_angles_fb[4]*R2D < -25 or self.gripper_largeTor == 1: 
+                    self.gripper_largeTor = 0
+                    self.gripper_status = 2
+            else: #0 no load detection                
+                self.ui.sldrGrip1.setProperty("value",-29)
+                self.ui.rdoutGrip1.setText(str(-29))
+
+                #set tolerance, change status to "closed"
+                #also change to closed when the torque exceed max
+                if self.joint_angles_fb[4]*R2D < -25:
+                    self.gripper_status = 2
+
+        self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+        self.cmd_publish();
+
+        # use value of gripper2 to show load(current) of gripper1
+        self.ui.rdoutGrip2.setText(str(self.load_fb[4]))    
+        
+        return self.gripper_status
+
+
+    """
+
+
+
+
+
+
