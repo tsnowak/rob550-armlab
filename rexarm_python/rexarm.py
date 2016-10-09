@@ -2,6 +2,7 @@ import lcm
 import time
 import numpy as np
 import math
+from AlarmClock import AlarmClock
 
 from lcmtypes import dynamixel_command_t
 from lcmtypes import dynamixel_command_list_t
@@ -34,7 +35,13 @@ L4 = DH4_A
 
 
 
+"""
+Gripper Constant
+"""
+GRIPPER_LASTCOMMAND_TOOPEN = 1
+GRIPPER_LASTCOMMAND_TOCLOSE = 0
 
+GRIPPER_ALARMCLOCK_TIMEOUT = 2000
 
 """ Rexarm Class """
 class Rexarm():
@@ -96,6 +103,7 @@ class Rexarm():
         self.gripper_status = 0   # 0: still moving, 1: opened, 2: closed
         self.get_gripper_status = 0 #3 return from iGripper_grab function
 
+        self.ac4gripper = AlarmClock()
 
     def cmd_publish(self):
         """ 
@@ -541,9 +549,9 @@ class Rexarm():
     """
     def iResetPosition(self):
 
-        self.iSetTorque(0.5)
-        self.iSetSpeed(0.2)
-        self.cmd_publish();
+        #self.iSetTorque(0.5)
+        #self.iSetSpeed(0.2)
+        #self.cmd_publish();
 
         self.iSetJointAngle(0,0)
         self.iSetJointAngle(1,0)
@@ -551,9 +559,13 @@ class Rexarm():
         self.iSetJointAngle(3,0)
         self.cmd_publish()
 
-    """
     def rexarm_gripper_grab(self,isGrab):
         self.gripper_status = 0
+
+        if (isGrab == 0 and self.gripper_lastcommand == GRIPPER_LASTCOMMAND_TOOPEN):
+            self.ac4gripper.alarmclock_start(GRIPPER_ALARMCLOCK_TIMEOUT);
+            print("[Gripper_Msg]: Alarm Setted")
+
 
         if (isGrab == 1): #open
             self.ui.sldrGrip1.setProperty("value",26)
@@ -561,6 +573,16 @@ class Rexarm():
             if self.joint_angles_fb[4]*R2D > 20: #set a tolerance, chagne status to "opened"
                 #print('gripper opened')
                 self.gripper_status = 1
+            
+
+            self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+            self.cmd_publish();
+
+           
+            self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOOPEN
+
+            print("Gripper Opened")
+            return self.gripper_status
 
         else: #close
             '''
@@ -582,30 +604,48 @@ class Rexarm():
             # no load detection                
             self.ui.sldrGrip1.setProperty("value",-29)
             self.ui.rdoutGrip1.setText(str(-29))
-
-            print('====================')
-            print(self.joint_angles_fb[4]*R2D),
-            print('     ')
+            """
+            print('==========Gripper Status==========')
+            print("Current Angle:\t"),
+            print(self.joint_angles_fb[4]*R2D)
+            print("Currnet Load:\t"),
             print(self.load_fb[4])
-
+            """
+            
             #set tolerance, change status to "closed"
             #also change to closed when the torque exceed max
-            if self.joint_angles_fb[4]*R2D < -24:
+            if self.joint_angles_fb[4]*R2D < -20:
                 #print('gripper closed')
                 self.gripper_status = 2
+                self.ac4gripper.alarmclock_stop();
+                print("[Gripper_Msg]: Successfully closed, clock stopped.")
 
-        #print('[STATUS]gripper angle: '),
-        #print self.joint_angles_fb[4]*R2D
-        self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
-        self.cmd_publish();
-
-        
-        return self.gripper_status
-
-        """
+                self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOCLOSE
+                return self.gripper_status
 
 
+            
+            else:
+            
+            #Check time out
+                if self.ac4gripper.alarmclock_checktimesup():
+                    self.gripper_status = 2
+                    self.ac4gripper.alarmclock_stop();
+                    print("[Gripper_Msg]: Not fully closed, but timeout")
 
+
+                #print('[STATUS]gripper angle: '),
+                #print self.joint_angles_fb[4]*R2D
+                self.joint_angles[4] = self.ui.sldrGrip1.value()*D2R
+                self.cmd_publish();
+
+                self.gripper_lastcommand = GRIPPER_LASTCOMMAND_TOCLOSE
+
+                return self.gripper_status
+
+
+
+    """
     def rexarm_gripper_grab(self,isGrab):
         self.gripper_status = 0
 
@@ -660,3 +700,12 @@ class Rexarm():
         self.ui.rdoutGrip2.setText(str(self.load_fb[4]))    
         
         return self.gripper_status
+
+
+    """
+
+
+
+
+
+

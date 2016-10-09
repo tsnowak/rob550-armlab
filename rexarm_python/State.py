@@ -841,7 +841,7 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
 
         y_4 = y_3
         x_4 = -270
-        z_4 = 120
+        z_4 = 50
         phi_4 = PI/2
 
         self.mtb.intermediatelocation=[]
