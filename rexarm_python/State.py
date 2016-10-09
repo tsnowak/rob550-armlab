@@ -26,7 +26,7 @@ L4 = DH4_A
 
 ERROR_LOCAL_TOL_X = 30
 ERROR_LOCAL_TOL_Y = 30
-ERROR_LOCAL_TOL_Z = 30
+ERROR_LOCAL_TOL_Z = 20
 ERROR_LOCAL_TOL_T = PI/40
 
 
@@ -405,6 +405,18 @@ class  State_OpenGripper():
     
 
 
+
+
+
+
+
+"""
+#####################################################################################################################
+                                         Class   M    T    F     T    Start
+#####################################################################################################################
+"""
+
+
 class State_MoveToFinalTarget():
 
     """
@@ -527,17 +539,20 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
         self.mtft.intermediatelocationnumber = 0
 
         #First way point.
-        phi_3 = PI/2;
+        
 
         x_3 = self.mtft.finaltarget[0]
         y_3 = self.mtft.finaltarget[1]
         z_3 = 35;
-
+        phi_3 = self.rexarm.rexarm_IK_CatchAnglePlaner([x_3,y_3,z_3])
         
+        print("[Msg]: Catching Potion"),
+        print([x_3,y_3,z_3,phi_3*R2D])
+
         x_2 = x_3
         y_2 = y_3
         z_2 = z_3 + 70
-        phi_2 = PI/2
+        phi_2 = phi_3
 
 
         r_target = math.sqrt( x_3**2 + y_3**2 );
@@ -804,7 +819,8 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         x_1 = self.mtb.initialLocation[0]
         y_1 = self.mtb.initialLocation[1]
         z_1 = 120
-        phi_1 = PI/2
+        phi_1  = self.rexarm.rexarm_IK_CatchAnglePlaner([x_1,y_1,z_1])
+        
 
         r_init = math.sqrt( x_1**2 + y_1**2 );
         x_2 = x_1 *1.0 / r_init * 100;
@@ -921,6 +937,12 @@ class State_MTB_End():# change state
         pass
 
 
+
+"""
+###########################################################
+MTBFINISHED
+###########################################################
+"""
 
 
 
