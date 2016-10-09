@@ -560,7 +560,7 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
 
         x_3 = self.mtft.finaltarget[0]
         y_3 = self.mtft.finaltarget[1]
-        z_3 = 45;#35
+        z_3 = 40;#35
         phi_3 = self.rexarm.rexarm_IK_CatchAnglePlaner([x_3,y_3,z_3])
         
         print("[Msg]: Catching Potion"),
@@ -850,7 +850,7 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
 
         x_1 = self.mtb.initialLocation[0]
         y_1 = self.mtb.initialLocation[1]
-        z_1 = 120
+        z_1 = 140
         phi_1  = self.rexarm.rexarm_IK_CatchAnglePlaner([x_1,y_1,z_1])
         
 
@@ -861,6 +861,8 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         #phi_2 = PI/2
 
         #Decision on which half ball to go.
+        
+        """
         if y_1 >0:
             x_3 = -180
             y_3 = 1
@@ -871,10 +873,33 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
             z_3 = 220
         phi_3 = PI/2
 
+
         y_4 = y_3
         x_4 = -220
-        z_4 = 90#130
+        z_4 = 45#130
         phi_4 = PI/2
+
+
+        """
+        
+        if y_1 >0:
+            x_3 = -197
+            y_3 = 1
+            z_3 = 128
+        else:
+            x_3 = -197
+            y_3 = -1
+            z_3 = 128
+        phi_3 = 134*D2R
+
+
+      
+        
+        y_4 = y_3
+        x_4 = -220
+        z_4 = 45#130
+        phi_4 = PI/2
+        
 
         self.mtb.intermediatelocation=[]
 
@@ -886,9 +911,9 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
 
         self.mtb.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
         self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
-       
-        self.mtb.intermediatelocation.append([x_4,y_4,z_4,phi_4]);
-        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
+      
+#        self.mtb.intermediatelocation.append([x_4,y_4,z_4,phi_4]);
+#        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
 
        
 
