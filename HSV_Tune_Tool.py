@@ -138,6 +138,7 @@ if __name__ == "__main__":
 			rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
 			hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
+			hsv = hsv[300:1000,300:1000]
 			cv2.imshow('Window', hsv)
 				
 			ch = cv2.waitKey(10)

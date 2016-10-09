@@ -203,19 +203,19 @@ class Gui(QtGui.QMainWindow):
         This will be extended to include other appropriate messages
         """ 
 
-        if(self.rex.plan_status == 1):
-            self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
-                                    %(self.rex.wpt_number + 1))
-        if (self.rex.plan_status == 0 and self.rex.way_total == 0):
-            self.ui.rdoutStatus.setText("Click [Train Begin] button to start train.")
+        #if(self.rex.plan_status == 1):
+        #    self.ui.rdoutStatus.setText("Playing Back - Waypoint %d"
+        #                            %(self.rex.wpt_number + 1))
+        #if (self.rex.plan_status == 0 and self.rex.way_total == 0):
+        #    self.ui.rdoutStatus.setText("Click [Train Begin] button to start train.")
 
 
-        if (self.rex.plan_status == 2):
-            self.ui.rdoutStatus.setText("Click [Get Way Point] button to record way point. Click [Stop Recording] to stop recording.")
-        if (self.rex.plan_status == 0 and self.rex.way_total != 0 and self.rex.way_number == 0):
-            self.ui.rdoutStatus.setText("Click [Replay Wholeway] to play the whole way. Click [Save Data] to Save the data.")
-        if (self.rex.plan_status == 5):
-            self.ui.rdoutStatus.setText("Click [Play Stop] to stop")
+        #if (self.rex.plan_status == 2):
+        #    self.ui.rdoutStatus.setText("Click [Get Way Point] button to record way point. Click [Stop Recording] to stop recording.")
+        #if (self.rex.plan_status == 0 and self.rex.way_total != 0 and self.rex.way_number == 0):
+        #    self.ui.rdoutStatus.setText("Click [Replay Wholeway] to play the whole way. Click [Save Data] to Save the data.")
+        #if (self.rex.plan_status == 5):
+        #    self.ui.rdoutStatus.setText("Click [Play Stop] to stop")
 
 
         """###############################################
@@ -281,11 +281,11 @@ class Gui(QtGui.QMainWindow):
         self.last_click[0] = x - MIN_X
         self.last_click[1] = y - MIN_Y
 
-	### TESTING BLOB DETECTION TESTING ###
-	#self.video.blobDetector()
-	### TESTING BLOB DETECTION TESTING ###
+		### TESTING BLOB DETECTION TESTING ###
+        self.video.blobDetector()
+		### TESTING BLOB DETECTION TESTING ###
 
-	# if aff_flag is 2, affine transform has been performed
+		# if aff_flag is 2, affine transform has been performed
         if (self.video.aff_flag == 2):
             
             ik_wcoords = np.dot(self.video.aff_matrix, np.array([[x-MIN_X],[y-MIN_Y],[1]]))
@@ -327,21 +327,27 @@ class Gui(QtGui.QMainWindow):
                 """
 
                 self.video.aff_matrix = self.video.affineTransform()
+                self.video.aff_flag = 2
+                self.video.mouse_click_id = 0
+
+                self.video.calculateBoundaryMask()
+                self.video.calculateArmMask()
+                self.video.generateBoundaryMask()
 
                 """ 
                 Update status of calibration flag and number of mouse
                 clicks
                 """
-                self.video.aff_flag = 2
-                self.video.mouse_click_id = 0
-            
+                
                 """ Updates Status Label to inform calibration is done """ 
-                self.ui.rdoutStatus.setText("Waiting for input")
+                self.ui.rdoutStatus.setText("Affine Transform Completed")
 
                 """ 
                 print affine calibration matrix numbers to terminal
                 """ 
-                print ("[Msg]: Affine Finished.")
+                print ("[Msg]: Affine Calibration Finished.")
+                print ("[Msg]: Affine Calibration Matrix: "),
+                print self.video.aff_matrix
 
     def affine_cal(self):
         """ 
