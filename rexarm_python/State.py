@@ -595,8 +595,8 @@ class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
         if (configuration[0] == 0):
             #TODO: Fix error handler.
             print("[ERROR]:Inreachable!!!")    
-            exit(1);
-        
+            
+            exit(1)
 
 
 

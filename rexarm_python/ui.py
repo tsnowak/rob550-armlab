@@ -121,7 +121,7 @@ class Ui_MainWindow(object):
         self.sldrMaxTorque = QtGui.QSlider(self.centralwidget)
         self.sldrMaxTorque.setGeometry(QtCore.QRect(850, 610, 30, 115))
         self.sldrMaxTorque.setMaximum(100)
-        self.sldrMaxTorque.setProperty("value", 60)
+        self.sldrMaxTorque.setProperty("value", 70)
         self.sldrMaxTorque.setOrientation(QtCore.Qt.Vertical)
         self.sldrMaxTorque.setObjectName(_fromUtf8("sldrMaxTorque"))
         self.TqLabel = QtGui.QLabel(self.centralwidget)

@@ -41,7 +41,7 @@ Gripper Constant
 GRIPPER_LASTCOMMAND_TOOPEN = 1
 GRIPPER_LASTCOMMAND_TOCLOSE = 0
 
-GRIPPER_ALARMCLOCK_TIMEOUT = 2000
+GRIPPER_ALARMCLOCK_TIMEOUT = 100
 
 """ Rexarm Class """
 class Rexarm():
@@ -611,10 +611,10 @@ class Rexarm():
             print("Currnet Load:\t"),
             print(self.load_fb[4])
             """
-            
+
             #set tolerance, change status to "closed"
             #also change to closed when the torque exceed max
-            if self.joint_angles_fb[4]*R2D < -20:
+            if self.joint_angles_fb[4]*R2D < -24:
                 #print('gripper closed')
                 self.gripper_status = 2
                 self.ac4gripper.alarmclock_stop();
