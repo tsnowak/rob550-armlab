@@ -347,26 +347,39 @@ class StateManager():
         RP --> RAP
         '''
         if (self.currentState == STATE_CODE_RP):
+            if (self.state_RP.iOpenGripper(self.rexarm) == 1):
+                print('[Msg]: Gripper closed.')
+                self.currentState = STATE_CODE_RAP
+                print("[Sts]: STATE_CODE_RAP")
 
+            else:# gripper not fully closed
+                pass
+
+       
             
-            # Copy from OG
-
-            self.currentState = STATE_CODE_RAP
 
 
         '''
          RAP ---> CCAFNP
         '''
         if (self.currentState == STATE_CODE_RAP):
-            
-            #
-            # iSetJointAngle.
-            # cmd_publish() 
-            # check if has arrived.
-            self.state_RAP.iResetOneLoopVariables()
-            self.currentState = STATE_CODE_CCACFP
 
-        
+            if (self.state_RAP.iResetArmPosition() == True):
+
+                #
+                # iSetJointAngle.
+                # cmd_publish() 
+                # check if has arrived.
+                #TODO: THe following code is not useful probably for competition. need to be changed.
+                self.state_RAP.iResetOneLoopVariables()
+                self.currentState = STATE_CODE_CCACFP
+
+
+            else:
+                pass
+
+
+            
 
     def StateManager_Test(self):
         self.state_MTFT.finaltarget = [152,224,36,(45+90)*D2R]
@@ -955,8 +968,24 @@ class State_MTB_End():# change state
 
 
 class State_ReleashPokmon():
-    def __init__(self, rexarm):
+    def __init__(self,rexarm):
+        self.rexarm = rexarm
         pass
+
+    def iOpenGripper(self, rexarm):
+        return self.rexarm.rexarm_gripper_grab(1);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class State_ResetArmPosition():
@@ -965,6 +994,27 @@ class State_ResetArmPosition():
         self.rexarm = rexarm
 
         pass
+
+
+    def iResetArmPosition(self):
+        self.rexarm.iResetPosition();
+        return self.iCheckIfArrived([0,0,411,0])
+        
+
+    def iCheckIfArrived(self, target):
+        self.rexarm.rexarm_FK(self.rexarm.joint_angles_fb)
+        realtimelocationgesture = [self.rexarm.P0[0],self.rexarm.P0[1],self.rexarm.P0[2],self.rexarm.T]
+        errorX = abs(realtimelocationgesture[0] - target[0]);
+        errorY = abs(realtimelocationgesture[1] - target[1]);
+        errorZ = abs(realtimelocationgesture[2] - target[2]);
+        errorT = abs(realtimelocationgesture[3] - target[3]);
+        if (errorX < ERROR_LOCAL_TOL_X and errorY < ERROR_LOCAL_TOL_Y and errorZ < ERROR_LOCAL_TOL_Z and errorT < ERROR_LOCAL_TOL_T):
+            return True
+        else:
+            return False
+
+
+
     def iResetOneLoopVariables(self):
         self.video.numPokRemain = 0
         self.video.whetherFinishedCam = False
