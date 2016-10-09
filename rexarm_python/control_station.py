@@ -319,7 +319,7 @@ class Gui(QtGui.QMainWindow):
         self.last_click[1] = y - MIN_Y
 
 		### TESTING BLOB DETECTION TESTING ###
-        self.video.blobDetector()
+        #self.video.blobDetector()
 		### TESTING BLOB DETECTION TESTING ###
 
 		# if aff_flag is 2, affine transform has been performed

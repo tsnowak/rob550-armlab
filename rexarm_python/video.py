@@ -66,8 +66,8 @@ class Video():
 
         """
         self.numPokRemain  = 0
-        self.whetherFinishedCam = False;
-        self.nextLocationofPokmon = [0,0];
+        self.whetherFinishedCam = 0
+        self.nextLocationofPokmon = (0,0)
 
         """ 
         Affine Calibration Variables 
@@ -289,6 +289,9 @@ class Video():
                         print center
 
         if len(self.location) != 0:
+            self.numPokRemain = len(self.location)
+            self.nextLocationofPokmon = self.location[(self.identity-1)]
+            self.whetherFinishedCam = 1
             print "Pokemon to Pursue: ",
             print self.identity,
             print "\tPokemon Colour: ",
@@ -297,6 +300,10 @@ class Video():
             print self.location[self.identity-1],
             print "\tPokemon Distance from Center: ",
             print self.distance
+        else:
+            self.numPokRemain = 0
+            self.nextLocationofPokmon = (0,0)
+            self.whetherFinishedCam = 1
 
     def affineTransform(self):
         """
