@@ -129,15 +129,15 @@ class Video():
             self.b_upper_xbound = int(max(self.p_boundary_mask[0][0],self.p_boundary_mask[1][0]))
             self.b_upper_ybound = int(max(self.p_boundary_mask[0][1],self.p_boundary_mask[1][1])) 
             
-            print "Boundary Mask Values"
-            print "Lower X: ",
-            print self.b_lower_xbound,
-            print "\tLower Y: ",
-            print self.b_lower_ybound,
-            print "\tUpper X: ",
-            print self.b_upper_xbound,
-            print "\tUpper Y: ",
-            print self.b_upper_ybound
+            #print "Boundary Mask Values"
+            #print "Lower X: ",
+            #print self.b_lower_xbound,
+            #print "\tLower Y: ",
+            #print self.b_lower_ybound,
+            #print "\tUpper X: ",
+            #print self.b_upper_xbound,
+            #print "\tUpper Y: ",
+            #print self.b_upper_ybound
 
         pass
 
@@ -162,15 +162,15 @@ class Video():
             self.a_upper_xbound = int(max(self.p_arm_mask[0][0],self.p_arm_mask[1][0]))
             self.a_upper_ybound = int(max(self.p_arm_mask[0][1],self.p_arm_mask[1][1])) 
 
-            print "Arm Mask Values"
-            print "Lower X: ",
-            print self.a_lower_xbound,
-            print "\tLower Y: ",
-            print self.a_lower_ybound,
-            print "\tUpper X: ",
-            print self.a_upper_xbound,
-            print "\tUpper Y: ",
-            print self.a_upper_ybound           
+            #print "Arm Mask Values"
+            #print "Lower X: ",
+            #print self.a_lower_xbound,
+            #print "\tLower Y: ",
+            #print self.a_lower_ybound,
+            #print "\tUpper X: ",
+            #print self.a_upper_xbound,
+            #print "\tUpper Y: ",
+            #print self.a_upper_ybound           
 
         pass
 
@@ -183,21 +183,17 @@ class Video():
             print width
             self.scaling_factor = ((height/self.QT_frame_size[0]),(width/self.QT_frame_size[1]))
             print self.scalng_factor
-
-
         pass
 
+    # create a boundary mask to block out pokemon outside of the base
     def generateBoundaryMask(self):
         if self.aff_flag == 2:
-            img = np.zeros((1280,960,3), np.uint8)
+            img = np.zeros((960,1280,3), np.uint8)
             cv2.rectangle(img, (self.b_lower_xbound*2,self.b_lower_ybound*2), (self.b_upper_xbound*2,self.b_upper_ybound*2),(255,255,255),-1)
-            cv2.imwrite("testy.jpg", img)
-            height, width, oth = img.shape
-            print "MASK SIZE: "
-            print height, 
-            print ", ",
-            print width
-            self.boundary_mask = img
+            mask = cv2.inRange(img, (255,255,255), (255,255,255))
+            cv2.imwrite("testy.jpg", mask)
+            self.boundary_mask = mask
+        pass
 
     def blobDetector(self):
         """
@@ -217,10 +213,12 @@ class Video():
             #cv2.namedWindow('TEST WINDOW', cv2.WINDOW_AUTOSIZE)    
             #cv2.waitKey(10)
             
+            print "[Msg] Pokemon Color Scheme: 0 = lb, 1 = db, 2 = o, 3 = y, 4 = g"
+
             # loop over # of pokemon thresholds
             for i in range(0,len(self.lower_thresh)):
-                print "Acquiring location ",
-                print i+1
+                print "[Msg] Acquiring pokemon colour ",
+                print i
                 # for at most 5 frames
                 #for j in range(0,5):
                     
@@ -233,7 +231,9 @@ class Video():
                 # draw filled black rectangle over arm mask region
                 cv2.rectangle(hsv, (self.a_lower_xbound*2, self.a_lower_ybound*2), (self.a_upper_xbound*2, self.a_upper_ybound*2), (0,0,0), -1)
     
-                #hsv = cv2.bitwise_and(hsv, hsv, mask=self.boundary_mask)
+                hsv = cv2.bitwise_and(hsv, hsv, mask = self.boundary_mask)
+                #hsv = cv2.multiply(hsv, self.boundary_mask)
+
                 # -x,y ; x,y ; x,-y;-x,-y
                 # crop the hsv image removing that which is outside the board area
                 #hsv = hsv[self.b_lower_xbound:self.b_upper_xbound, self.b_lower_ybound:self.b_upper_ybound]
@@ -262,20 +262,22 @@ class Video():
                     if radius > 12 and radius < 30:
                         tmp_center = np.dot(self.aff_matrix, np.array([[center[0]],[center[1]],[1]]))
                         center = (int(tmp_center[0]),int(tmp_center[1]))
-                        print center
                         self.location.append(center)
                         self.poke_color.append(i)
                         tmp_distance = ((center[0]**2)+(center[1]**2))**(.5)
-                        print tmp_distance
                         if tmp_distance < self.distance:
                             self.distance = tmp_distance
-                            print self.distance
+                            #print self.distance
                             self.identity = (len(self.location))
-                        print "Pokemon Found!!!",
+                        print "[Msg] Pokemon Found!!!",
                         print "\t Number: ",
                         print len(self.location),   
                         print "\t Colour: ",
                         print self.poke_color[-1]
+                        print "\t Distance: ",
+                        print tmp_distance
+                        print "\t Center: ",
+                        print center
 
         if len(self.location) != 0:
             print "Pokemon to Pursue: ",
