@@ -976,6 +976,9 @@ class Gui(QtGui.QMainWindow):
     """
 
     def iUpdateStatusBar(self):
+        if (self.video.aff_flag == 1):
+            pass
+            
         if (self.statemanager.currentState == STATE_CODE_INIT):
             self.ui.rdoutStatus.setText("STATE_CODE_INIT")
         if (self.statemanager.currentState == STATE_CODE_RP):

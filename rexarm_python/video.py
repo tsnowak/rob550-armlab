@@ -199,7 +199,7 @@ class Video():
             img = np.zeros((960,1280,3), np.uint8)
             cv2.rectangle(img, (self.b_lower_xbound*2,self.b_lower_ybound*2), (self.b_upper_xbound*2,self.b_upper_ybound*2),(255,255,255),-1)
             mask = cv2.inRange(img, (255,255,255), (255,255,255))
-            cv2.imwrite("testy.jpg", mask)
+            #cv2.imwrite("testy.jpg", mask)
             self.boundary_mask = mask
         pass
 
@@ -233,7 +233,7 @@ class Video():
                     
                 # Let's try just looking at one frame
                 # if the pokemon was acquired in the last frame, exit the loop
-                self.captureNextFrame()
+                #self.captureNextFrame()
                 #change current frame of color BAYER_GB2BGR to
                 hsv = cv2.cvtColor(self.currentFrame, cv2.COLOR_RGB2HSV)
 
@@ -241,11 +241,9 @@ class Video():
                 cv2.rectangle(hsv, (self.a_lower_xbound*2, self.a_lower_ybound*2), (self.a_upper_xbound*2, self.a_upper_ybound*2), (0,0,0), -1)
     
                 hsv = cv2.bitwise_and(hsv, hsv, mask = self.boundary_mask)
-                #hsv = cv2.multiply(hsv, self.boundary_mask)
 
                 # -x,y ; x,y ; x,-y;-x,-y
                 # crop the hsv image removing that which is outside the board area
-                #hsv = hsv[self.b_lower_xbound:self.b_upper_xbound, self.b_lower_ybound:self.b_upper_ybound]
                 # TESTING
                 #cv2.imshow('TEST WINDOW', hsv)
                 
@@ -288,23 +286,24 @@ class Video():
                         print "\t Center: ",
                         print center
 
-        if len(self.location) != 0:
-            self.numPokRemain = len(self.location)
-            self.nextLocationofPokmon[0] = self.location[(self.identity-1)][0]
-            self.nextLocationofPokmon[1] = self.location[(self.identity-1)][1]
-            self.whetherFinishedCam = 1
-            print "Pokemon to Pursue: ",
-            print self.identity,
-            print "\tPokemon Colour: ",
-            print self.poke_color[self.identity-1],
-            print "\tPokemon Location: ",
-            print self.location[self.identity-1],
-            print "\tPokemon Distance from Center: ",
-            print self.distance
-        else:
-            self.numPokRemain = 0
-            self.nextLocationofPokmon = [0,0]
-            self.whetherFinishedCam = 1
+            if len(self.location) != 0:
+                self.numPokRemain = len(self.location)
+                self.nextLocationofPokmon[0] = self.location[(self.identity-1)][0]
+                self.nextLocationofPokmon[1] = self.location[(self.identity-1)][1]
+                self.whetherFinishedCam = 1
+                print "Pokemon to Pursue: ",
+                print self.identity,
+                print "\tPokemon Colour: ",
+                print self.poke_color[self.identity-1],
+                print "\tPokemon Location: ",
+                print self.location[self.identity-1],
+                print "\tPokemon Distance from Center: ",
+                print self.distance
+            else:
+                self.numPokRemain = 0
+                self.nextLocationofPokmon = [0,0]
+                self.whetherFinishedCam = 1
+        pass
 
     def affineTransform(self):
         """

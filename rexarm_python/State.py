@@ -55,6 +55,8 @@ STATE_CODE_MTB_END = 43
 
 
 REACHABLE_MAX_DISTANCE  = 280
+SHRINK_RANGE = 240
+SHRINK_DISTANCE = 240
 
 """State Class"""
 class StateManager():
@@ -436,6 +438,7 @@ class State_MoveToFinalTarget():
 
 
         self.intermediatelocation = [[0,0,0,0]]
+        self.intermediatejointangle = [[0,0,0,0]]   
         self.intermediatelocationnumber = 0
         self.intermediatelocationcurrentnumber = 0
         self.rexarm = rexarm
@@ -448,6 +451,7 @@ class State_MoveToFinalTarget():
         self.intermediatelocationnumber = 0
         self.intermediatelocationcurrentnumber = 0
         self.intermediatelocation = []
+        self.intermediatejointangle = []
         self.finaltarget = []
 
     """
@@ -479,8 +483,26 @@ class State_MoveToFinalTarget():
     name: state_MTFT_iAddIntermediateLocation
     Function: Add some intermediate location and orientation into the path, (probably can avoid some obstacles.)
     """
-    def state_MTFT_iAddIntermediateLocation(self,intermediatelocation):
-        self.intermediatelocation.append(intermediatelocation);
+    def state_MTFT_iAddIntermediateLocation(self,intermediatelocation): #[x,y,z,phi]
+         ###456
+         
+
+        configuration =  self.rexarm.rexarm_IK(intermediatelocation, 1)
+
+        #print("=================+++++>> configuation:"),
+        #print(configuration)
+        
+        if (configuration[0] == 0):
+            print("[ERROR]:Inreachable!!!=========================================") 
+            self.mtft.MTFT_currentstate = STATE_CODE_MTFT_END
+            exit(1)
+        else:
+
+            self.intermediatejointangle.append(configuration[1])
+            self.intermediatelocation.append(intermediatelocation)
+            self.intermediatelocationnumber = self.intermediatelocationnumber + 1
+
+   
 
     """
     name: state_MTFT_iMoveArmToFinalLocation(self).
@@ -583,66 +605,68 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
 
         self.mtft.intermediatelocation=[]
 
-        self.mtft.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
-        self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
+        self.mtft.state_MTFT_iAddIntermediateLocation([x_1,y_1,z_1,phi_1])
+        self.mtft.state_MTFT_iAddIntermediateLocation([x_3,y_3,z_3,phi_3])
+
+
+        #self.mtft.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
+        #self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
 
         #self.mtft.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
         #self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
 
-        self.mtft.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
-        self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
+        #self.mtft.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
+        #self.mtft.intermediatelocationnumber = self.mtft.intermediatelocationnumber + 1
 
         
 
 
 class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
     def __init__(self, rexarm, mtft):
-        self.rexarm = rexarm;
+        self.rexarm = rexarm
         self.mtft = mtft
+        self.configuration = []
+        
 
-    def iGoToNextWayPoint(self):
+
+    def iGoToNextWayPoint(self):####123
         isFinished = False
 
         if self.mtft.intermediatelocationcurrentnumber == self.mtft.intermediatelocationnumber:
-            isFinished = True       
+            isFinished = True
             return isFinished
 
-        #IK
-        configuration = self.iCalculateInverseKinematics()
-        if (configuration[0] == 0):
-            #TODO: Fix error handler.
-            """
-            print("[ERROR]:Inreachable!!!=========================================") 
-
-            self.mtft.MTFT_currentstate = STATE_CODE_MTFT_END  
-            pass
-            """
-            exit(1)
-
-
-
-
+        
 
         #set joints
-        self.rexarm.iSetJointAngle(0,configuration[1][0])
-        self.rexarm.iSetJointAngle(1,configuration[1][1])
-        self.rexarm.iSetJointAngle(2,configuration[1][2])
-        self.rexarm.iSetJointAngle(3,configuration[1][3])
+        #print("=================================================>"),
+        #print(self.mtft.intermediatelocationcurrentnumber)
+        #print(self.mtft.intermediatejointangle)
+
+        self.rexarm.iSetJointAngle(0,self.mtft.intermediatejointangle[self.mtft.intermediatelocationcurrentnumber][0])
+        self.rexarm.iSetJointAngle(1,self.mtft.intermediatejointangle[self.mtft.intermediatelocationcurrentnumber][1])
+        self.rexarm.iSetJointAngle(2,self.mtft.intermediatejointangle[self.mtft.intermediatelocationcurrentnumber][2])
+        self.rexarm.iSetJointAngle(3,self.mtft.intermediatejointangle[self.mtft.intermediatelocationcurrentnumber][3])
+
         
         #publish
         self.rexarm.cmd_publish()
 
         #FK
-        target = self.rexarm.rexarm_FK(configuration[1])
+        #target = self.rexarm.rexarm_FK(self.mtft.intermediatejointangle[self.mtft.intermediatelocationcurrentnumber])
 
+        target = self.mtft.intermediatelocation[self.mtft.intermediatelocationcurrentnumber]
         #check arrived?
         isArrived = False
         isArrived = self.iCheckIfArrived(target)
         
         if isArrived == True:
             #move to next point
+
             self.mtft.intermediatelocationcurrentnumber = self.mtft.intermediatelocationcurrentnumber + 1
             
+
+
             # arrived
             print("[Msg]: "),
             print(self.mtft.intermediatelocationcurrentnumber-1),
@@ -728,6 +752,7 @@ class State_MoveToBall():
 
 
         self.intermediatelocation = [[0,0,0,0]]
+        self.intermediatejointangle = [[0,0,0,0]]
         self.intermediatelocationnumber = 0
         self.intermediatelocationcurrentnumber = 0
         self.rexarm = rexarm
@@ -739,6 +764,7 @@ class State_MoveToBall():
         self.intermediatelocationnumber = 0
         self.intermediatelocationcurrentnumber = 0
         self.intermediatelocation = []
+        self.intermediatejointangle = []
         self.finaltarget = []
 
     """
@@ -769,7 +795,20 @@ class State_MoveToBall():
     Function: Add some intermediate location and orientation into the path, (probably can avoid some obstacles.)
     """
     def state_MTB_iAddIntermediateLocation(self,intermediatelocation):
-        self.intermediatelocation.append(intermediatelocation);
+        configuration =  self.rexarm.rexarm_IK(intermediatelocation, 1)
+
+        #print("=================+++++>> configuation:"),
+        #print(configuration)
+        
+        if (configuration[0] == 0):
+            print("[ERROR]:Inreachable!!!=========================================") 
+            self.mtb.MTB_currentstate = STATE_CODE_MTB_END
+            exit(1)
+        else:
+
+            self.intermediatejointangle.append(configuration[1])
+            self.intermediatelocation.append(intermediatelocation)
+            self.intermediatelocationnumber = self.intermediatelocationnumber + 1
 
     """
     name: state_MTB_iMoveArmToFinalLocation(self).
@@ -834,9 +873,11 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         """
 
         r_current = math.sqrt(self.mtb.finaltarget[0]**2 + self.mtb.finaltarget[1]**2)
+
         if (r_current >= REACHABLE_MAX_DISTANCE):
             self.mtb.finaltarget[0] = self.mtb.finaltarget[0] / r_current * REACHABLE_MAX_DISTANCE
             self.mtb.finaltarget[1] = self.mtb.finaltarget[1] / r_current * REACHABLE_MAX_DISTANCE
+
 
 
 
@@ -903,15 +944,37 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
 
         self.mtb.intermediatelocation=[]
 
-        self.mtb.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
-        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
+        #self.mtb.intermediatelocation.append([x_1,y_1,z_1,phi_1]);
+        #self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
+
+
+
+
+
+        r_1  = math.sqrt(x_1 **2 + y_1 **2)
+        if (r_1 > SHRINK_RANGE):
+            x_1 = x_1 *1.0 / r_1 * SHRINK_DISTANCE
+            y_1 = y_1 *1.0 / r_1 * SHRINK_DISTANCE
+
+
+
+        self.mtb.state_MTB_iAddIntermediateLocation([x_1,y_1,z_1,phi_1])
+
+
+
+
+
+
+
+
+        self.mtb.state_MTB_iAddIntermediateLocation([x_3,y_3,z_3,phi_3])
 
 #        self.mtb.intermediatelocation.append([x_2,y_2,z_2,phi_2]);
 #        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
 
-        self.mtb.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
-        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
-      
+        #self.mtb.intermediatelocation.append([x_3,y_3,z_3,phi_3]);
+        #self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
+        
 #        self.mtb.intermediatelocation.append([x_4,y_4,z_4,phi_4]);
 #        self.mtb.intermediatelocationnumber = self.mtb.intermediatelocationnumber + 1
 
@@ -924,57 +987,47 @@ class State_MTB_GoToNextWaypoint():#cmd, check if arrived
         self.rexarm = rexarm;
         self.mtb = mtb
 
+
     def iGoToNextWayPoint(self):
         isFinished = False
 
         if self.mtb.intermediatelocationcurrentnumber == self.mtb.intermediatelocationnumber:
-            isFinished = True      
+            isFinished = True
             return isFinished
 
-        #IK
-
-        
-        configuration = self.iCalculateInverseKinematics()
-        if (configuration[0] == 0):
-            #TODO: Fix error handler.
-            """
-            print("[ERROR]:Inreachable!!!=========================================") 
-
-
-
-
-            self.mtb.MTB_currentstate = STATE_CODE_MTB_END  
-            pass
-            """
-            exit(1)
         
 
         #set joints
-        self.rexarm.iSetJointAngle(0,configuration[1][0])
-        self.rexarm.iSetJointAngle(1,configuration[1][1])
-        self.rexarm.iSetJointAngle(2,configuration[1][2])
-        self.rexarm.iSetJointAngle(3,configuration[1][3])
-       
+        self.rexarm.iSetJointAngle(0,self.mtb.intermediatejointangle[self.mtb.intermediatelocationcurrentnumber][0])
+        self.rexarm.iSetJointAngle(1,self.mtb.intermediatejointangle[self.mtb.intermediatelocationcurrentnumber][1])
+        self.rexarm.iSetJointAngle(2,self.mtb.intermediatejointangle[self.mtb.intermediatelocationcurrentnumber][2])
+        self.rexarm.iSetJointAngle(3,self.mtb.intermediatejointangle[self.mtb.intermediatelocationcurrentnumber][3])
+
+        
         #publish
         self.rexarm.cmd_publish()
 
         #FK
-        target = self.rexarm.rexarm_FK(configuration[1])
+        #target = self.rexarm.rexarm_FK(self.mtft.intermediatejointangle[self.mtft.intermediatelocationcurrentnumber])
 
+        target = self.mtb.intermediatelocation[self.mtb.intermediatelocationcurrentnumber]
         #check arrived?
         isArrived = False
         isArrived = self.iCheckIfArrived(target)
-       
+        
         if isArrived == True:
             #move to next point
+
             self.mtb.intermediatelocationcurrentnumber = self.mtb.intermediatelocationcurrentnumber + 1
-           
+            
+
+
             # arrived
             print("[Msg]: "),
             print(self.mtb.intermediatelocationcurrentnumber-1),
             print(" Way Point Arrived.")
 
-           
+            
 
         return isFinished
 

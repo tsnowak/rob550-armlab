@@ -229,14 +229,12 @@ class Rexarm():
         P1 = np.dot(R12,P2)
         #he point with respect to the base. in the format[[],[],[],[]]
         Pbase = np.dot(R01,P1)
-        self.P0[0] = Pbase[0][0]
-        self.P0[1] = Pbase[1][0]
+        self.P0[0] = -Pbase[0][0]
+        self.P0[1] = -Pbase[1][0]
         self.P0[2] = Pbase[2][0]
 
-        self.T =  (- 1 * (angles[1] + angles[2] + angles[3] )  ) ;
+        self.T =  - (- 1 * (angles[1] + angles[2] + angles[3] )  ) ;
         return [self.P0[0],self.P0[1],self.P0[2],self.T]
-
-
 
     """
     The helper function for IK
@@ -378,42 +376,43 @@ class Rexarm():
 
        
         configuration_elbow_up = PI  - Angle_WES;
-        configuration_elbow_up = - configuration_elbow_up;
+        #configuration_elbow_up = - configuration_elbow_up;
+        
         Angle_ZSW = math.atan2(W_x, W_z - L1)
         configuration_shoulder_up = Angle_ZSW - Angle_WSE
-        configuration_shoulder_up =  - configuration_shoulder_up
-        configuration_wrist_up = Angle_ZWG + configuration_shoulder_up + configuration_elbow_up;
+        #configuration_shoulder_up =  - configuration_shoulder_up
+        configuration_wrist_up = Angle_ZWG - configuration_shoulder_up - configuration_elbow_up;
 
-        configuration_wrist_up = - configuration_wrist_up;
+        #configuration_wrist_up = - configuration_wrist_up;
 
-        configuration_elbow_down = PI  - Angle_WES;
+        #configuration_elbow_down = PI  - Angle_WES;
         
-        configuration_elbow_down = + configuration_elbow_down;
-        Angle_ZSW = math.atan2(W_x, W_z - L1)
-        configuration_shoulder_down = Angle_ZSW + Angle_WSE
-        configuration_shoulder_down =  - configuration_shoulder_down
+        #configuration_elbow_down = + configuration_elbow_down;
+        #Angle_ZSW = math.atan2(W_x, W_z - L1)
+        #configuration_shoulder_down = Angle_ZSW + Angle_WSE
+        #configuration_shoulder_down =  - configuration_shoulder_down
 
 
-        configuration_wrist_down = Angle_ZWG + configuration_shoulder_down + configuration_elbow_down;
-        configuration_wrist_down = - configuration_wrist_down;
+        #configuration_wrist_down = Angle_ZWG + configuration_shoulder_down + configuration_elbow_down;
+        #configuration_wrist_down = - configuration_wrist_down;
 
 
 
         configuration_1 = [configuration_base, configuration_shoulder_up,configuration_elbow_up,configuration_wrist_up];
-        configuration_2 = [configuration_base, configuration_shoulder_down,configuration_elbow_down,0];
+        #configuration_2 = [configuration_base, configuration_shoulder_down,configuration_elbow_down,0];
         
 
-        configuration_3 = [ self.rexarm_IK_helper(configuration_1[0] + PI) , -configuration_1[1],-configuration_1[2],-configuration_1[3]]
-        configuration_4 = [ self.rexarm_IK_helper(configuration_2[0] + PI) , -configuration_2[1],-configuration_2[2],-configuration_2[3]]
+        #configuration_3 = [ self.rexarm_IK_helper(configuration_1[0] + PI) , -configuration_1[1],-configuration_1[2],-configuration_1[3]]
+        #configuration_4 = [ self.rexarm_IK_helper(configuration_2[0] + PI) , -configuration_2[1],-configuration_2[2],-configuration_2[3]]
 
 
         """
         Check validity for each configuration.
         """
         validity_1 = self.rexarm_IK_ValidityTesthelper(configuration_1)
-        validity_2 = self.rexarm_IK_ValidityTesthelper(configuration_2)
-        validity_3 = self.rexarm_IK_ValidityTesthelper(configuration_3)
-        validity_4 = self.rexarm_IK_ValidityTesthelper(configuration_4)
+        #validity_2 = self.rexarm_IK_ValidityTesthelper(configuration_2)
+        #validity_3 = self.rexarm_IK_ValidityTesthelper(configuration_3)
+        #validity_4 = self.rexarm_IK_ValidityTesthelper(configuration_4)
         #print([configuration_1[0]*R2D,configuration_1[1]*R2D,configuration_1[2]*R2D,configuration_1[3]*R2D])
 
 #        print([configuration_2[0]*R2D,configuration_2[1]*R2D,configuration_2[2]*R2D,configuration_2[3]*R2D])
@@ -423,12 +422,12 @@ class Rexarm():
 #       print([configuration_4[0]*R2D,configuration_4[1]*R2D,configuration_4[2]*R2D,configuration_4[3]*R2D])
         print("[IK]: validity:"),
         print(validity_1), 
-        print(validity_2),
-        print(validity_3),
-        print(validity_4)
+        #print(validity_2),
+        #print(validity_3),
+        #rint(validity_4)
 
-        return [validity_1,configuration_1,validity_2, configuration_2, validity_3,configuration_3, validity_4,configuration_4]
-
+        #return [validity_1,configuration_1,validity_2, configuration_2, validity_3,configuration_3, validity_4,configuration_4]
+        return [validity_1, configuration_1]
 
 
         """
@@ -572,7 +571,7 @@ class Rexarm():
         if (isGrab == 1): #open
             self.ui.sldrGrip1.setProperty("value",26)
             self.ui.rdoutGrip1.setText(str(26)) 
-            if self.joint_angles_fb[4]*R2D > 22: #set a tolerance, chagne status to "opened"
+            if self.joint_angles_fb[4]*R2D > 20: #set a tolerance, chagne status to "opened"
                 #print('gripper opened')
                 self.gripper_status = 1
             
