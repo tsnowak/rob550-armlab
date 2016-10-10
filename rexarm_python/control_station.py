@@ -133,7 +133,7 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser2.clicked.connect(self.iTestSM)
         
         self.ui.btnUser3.setText("Reset Position")
-        self.ui.btnUser3.clicked.connect(self.rex.iResetPosition)
+        self.ui.btnUser3.clicked.connect(self.rex.iResetPosition_ForCompetation)
 
         self.ui.btnUser4.setText("Replay")
         self.ui.btnUser4.clicked.connect(self.iReplay)

@@ -41,7 +41,7 @@ Gripper Constant
 GRIPPER_LASTCOMMAND_TOOPEN = 1
 GRIPPER_LASTCOMMAND_TOCLOSE = 0
 
-GRIPPER_ALARMCLOCK_TIMEOUT = 200
+GRIPPER_ALARMCLOCK_TIMEOUT = 100
 
 """ Rexarm Class """
 class Rexarm():
@@ -122,10 +122,10 @@ class Rexarm():
             cmd.speed = self.speed
             cmd.max_torque = self.max_torque
             if i == 3:
-                cmd.speed = 0.8
+                cmd.speed = 1.0
             if i==4:
-                cmd.speed = 0.8
-                cmd.max_torque = 0.8
+                cmd.speed = 1.0
+                cmd.max_torque = 1.0
 
             #print cmd.position_radians
             msg.commands.append(cmd)
@@ -548,6 +548,16 @@ class Rexarm():
     """
     Reset the position of all rexarm to be zero.
     """
+    def iResetPosition_ForCompetation(self):
+        self.iSetJointAngle(0,-91.5*D2R)
+        self.iSetJointAngle(1,-65.0*D2R)
+        self.iSetJointAngle(2,111.0*D2R)
+        self.iSetJointAngle(3,70.0*D2R)
+        self.cmd_publish()
+
+        pass####Hello
+
+
     def iResetPosition(self):
 
         #self.iSetTorque(0.5)
@@ -571,7 +581,7 @@ class Rexarm():
         if (isGrab == 1): #open
             self.ui.sldrGrip1.setProperty("value",26)
             self.ui.rdoutGrip1.setText(str(26)) 
-            if self.joint_angles_fb[4]*R2D > 22: #set a tolerance, chagne status to "opened"
+            if self.joint_angles_fb[4]*R2D > 18: #set a tolerance, chagne status to "opened"
                 #print('gripper opened')
                 self.gripper_status = 1
             

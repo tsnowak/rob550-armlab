@@ -67,6 +67,12 @@ class Video():
         self.scaling_factor = (0,0)
         self.boundary_mask = np.zeros((1280,960,3), np.uint8)
 
+
+        """
+        HACKMODE VARIABLES
+        """
+        self.first_side = 0
+
         """
         Statemachine trigger.
 
@@ -313,6 +319,10 @@ class Video():
                         self.location.append(center)
                         self.poke_color.append(i)
                         tmp_distance = ((center[0]**2)+(center[1]**2))**(.5)
+                        if self.first_side == 1:
+                            tmp_distance = tmp_distance - 3*self.location[-1][1]
+                        else:
+                            tmp_distance = tmp_distance + 3*self.location[-1][1] 
                         if tmp_distance < self.distance:
                             self.distance = tmp_distance
                             #print self.distance
@@ -328,6 +338,19 @@ class Video():
                         print center
 
             if len(self.location) != 0:
+                if self.first_side == 0:
+                    if self.location[self.identity-1][1] > 0:
+                        self.first_side = 1
+                    else:
+                        self.first_side = -1  
+
+                if self.first_side != 0:
+                    if abs(self.location[self.identity-1][1]) < 5:
+                        if self.first_side == -1:
+                            self.location[self.identity-1] = (self.location[self.identity-1][0],1)
+                        else:
+                            self.location[self.identity-1] = (self.location[self.identity-1][0],-1)
+   
                 self.numPokRemain = len(self.location)
                 self.nextLocationofPokmon[0] = self.location[(self.identity-1)][0]
                 self.nextLocationofPokmon[1] = self.location[(self.identity-1)][1]

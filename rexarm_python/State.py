@@ -24,9 +24,9 @@ L4 = DH4_A
 
 
 
-ERROR_LOCAL_TOL_X = 30
-ERROR_LOCAL_TOL_Y = 30
-ERROR_LOCAL_TOL_Z = 20
+ERROR_LOCAL_TOL_X = 200
+ERROR_LOCAL_TOL_Y = 200
+ERROR_LOCAL_TOL_Z = 200
 ERROR_LOCAL_TOL_T = PI/40
 
 
@@ -211,8 +211,8 @@ class StateManager():
         """
 
         if (self.currentState == STATE_CODE_OG):
-            self.rexarm.iSetSpeed(0.4);
-            self.rexarm.iSetTorque(0.7);
+            self.rexarm.iSetSpeed(1.0);
+            self.rexarm.iSetTorque(1.0);
             if (self.state_OG.iOpenGripper(self.rexarm) == 1):
                 print('[msg] Gripper opened.')
                 self.currentState = STATE_CODE_MTFT
@@ -263,7 +263,8 @@ class StateManager():
                 # 
                 # state_MTFT_GTNW: calculate the inverse kinematics.
                 # state_MTFT_GTNW: iSetJointAngles()
-                # state_MTFT_GTNW: cmd_publish()
+                # state_MTFT_GTNW: cmd_publish()0.4
+
                 # state_MTFT_GTNW: compare the current location with the way point's configuration.
                 #                   If within error torrance, then up date the state_MTFT.intermediatelocationcurrentnumber += 1.
                 #                    
@@ -353,13 +354,11 @@ class StateManager():
         RP --> RAP
         '''
         if (self.currentState == STATE_CODE_RP):
-            if (self.state_RP.iOpenGripper(self.rexarm) == 1):
-                print('[Msg]: Gripper closed.')
-                self.currentState = STATE_CODE_RAP
-                print("[Sts]: STATE_CODE_RAP")
-
-            else:# gripper not fully closed
-                pass
+            self.state_RP.iOpenGripper(self.rexarm)
+            #if (self.state_RP.iOpenGripper(self.rexarm) == 1):
+            print('[Msg]: Gripper open.')
+            self.currentState = STATE_CODE_RAP
+            print("[Sts]: STATE_CODE_RAP")
 
        
             
@@ -665,8 +664,8 @@ class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
             self.rexarm.iSetSpeed(1.0)
             self.rexarm.iSetTorque(1.0)
         else:
-            self.rexarm.iSetSpeed(0.4)
-            self.rexarm.iSetTorque(0.7);
+            self.rexarm.iSetSpeed(1.00)
+            self.rexarm.iSetTorque(1.00);
 
 
 
@@ -938,12 +937,12 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         """
         
         if y_1 >0:
-            x_3 = -250
-            y_3 = 1
+            x_3 = -240
+            y_3 = 60
             z_3 = 128
         else:
-            x_3 = -250
-            y_3 = -1
+            x_3 = -240
+            y_3 = -60
             z_3 = 128
         phi_3 = 134*D2R
 
@@ -972,7 +971,7 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
 
 
 
-        self.mtb.state_MTB_iAddIntermediateLocation([x_1,y_1,z_1,phi_1])
+        #self.mtb.state_MTB_iAddIntermediateLocation([x_1,y_1,z_1,phi_1])
 
 
 
@@ -1150,9 +1149,9 @@ class State_ResetArmPosition():
 
 
     def iResetArmPosition(self):
-        self.rexarm.iResetPosition();
-        return self.iCheckIfArrived([0,0,411,0])
-        
+        #self.rexarm.iResetPosition();
+        #return self.iCheckIfArrived([0,0,411,0])
+        return True
 
     def iCheckIfArrived(self, target):
         self.rexarm.rexarm_FK(self.rexarm.joint_angles_fb)
