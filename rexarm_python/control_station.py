@@ -135,13 +135,20 @@ class Gui(QtGui.QMainWindow):
         self.ui.btnUser3.setText("Reset Position")
         self.ui.btnUser3.clicked.connect(self.rex.iResetPosition)
 
+        self.ui.btnUser4.setText("Replay")
+        self.ui.btnUser4.clicked.connect(self.iReplay)
+
+        """
         self.ui.btnUser4.setText("OpenGripper")
         self.ui.btnUser4.clicked.connect(self.iTestGripperOpen)
 
         self.ui.btnUser5.setText("CloseGripper")
         self.ui.btnUser5.clicked.connect(self.iTestGripperClose)
 
+        
         """
+        """
+
         
         self.ui.btnUser2.setText("STEP1: Reset Position")
         self.ui.btnUser2.clicked.connect(self.iResetPosition)
@@ -374,6 +381,8 @@ class Gui(QtGui.QMainWindow):
 
                 self.video.calculateBoundaryMask()
                 self.video.calculateArmMask()
+                self.video.calculateBaseMask()
+                self.video.calculatePokeballMask()
                 self.video.generateBoundaryMask()
 
                 """ 
@@ -630,6 +639,10 @@ class Gui(QtGui.QMainWindow):
         else:
             self.ui.btnUser1.setEnabled(0);
 
+        if (self.statemanager.currentState == STATE_CODE_END):
+            self.ui.btnUser4.setEnabled(1)
+        else:
+            self.ui.btnUser4.setEnabled(0)
 
     """
         if (self.rex.plan_status == 0):
@@ -978,7 +991,6 @@ class Gui(QtGui.QMainWindow):
     def iUpdateStatusBar(self):
         if (self.video.aff_flag == 1):
             pass
-            
         if (self.statemanager.currentState == STATE_CODE_INIT):
             self.ui.rdoutStatus.setText("STATE_CODE_INIT")
         if (self.statemanager.currentState == STATE_CODE_RP):
@@ -1017,6 +1029,10 @@ class Gui(QtGui.QMainWindow):
     def iTestGripperClose(self):
         self.rex.rexarm_gripper_grab(0)
 
+
+    def iReplay(self):
+        if (self.statemanager.currentState == STATE_CODE_END):
+            self.statemanager.currentState = STATE_CODE_INIT
 
 def main():
     app = QtGui.QApplication(sys.argv)

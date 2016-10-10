@@ -38,7 +38,13 @@ class Video():
         #self.w_arm_mask = [(-300,35),(10,35),(10,-35),(-300,-35)]
         self.p_arm_mask = [(0,0),(0,0)]
         self.w_arm_mask = [(10,35),(-300,-35)]
+
+        self.p_base_mask = [(0,0)]
+        self.w_base_mask = [(20,0)]
         
+        self.p_pokeball_mask = [(0,0)]
+        self.w_pokeball_mask = [(-250,0)]
+
         # find the lower and upper x and y values for cropping the image        
         self.b_lower_xbound = 0
         self.b_lower_ybound = 0
@@ -182,6 +188,40 @@ class Video():
 
         pass
 
+    def calculateBaseMask(self):
+
+        if self.aff_flag == 2:
+            A = self.aff_matrix
+            A_T = np.transpose(A)
+            b = self.w_base_mask 
+            #B = np.array([[b[0][0],b[1][0]],[b[0][1],b[1][1]],[1,1]])
+            for i in range (0,len(b)):
+                # x = (A^T*A)^(-1)*A^T*b
+                # A is self.aff_matrix
+                # B is index i of w_boundary_matrix in np.array format
+                B = np.array([[b[i][0]],[b[i][1]],[1]])
+                p_coords = np.dot(np.dot((np.linalg.inv(np.dot(A_T,A))), A_T), B)
+                self.p_base_mask[i] = (p_coords[0]*2,p_coords[1]*2)             
+
+        pass
+
+    def calculatePokeballMask(self):
+
+        if self.aff_flag == 2:
+            A = self.aff_matrix
+            A_T = np.transpose(A)
+            b = self.w_pokeball_mask 
+            #B = np.array([[b[0][0],b[1][0]],[b[0][1],b[1][1]],[1,1]])
+            for i in range (0,len(b)):
+                # x = (A^T*A)^(-1)*A^T*b
+                # A is self.aff_matrix
+                # B is index i of w_boundary_matrix in np.array format
+                B = np.array([[b[i][0]],[b[i][1]],[1]])
+                p_coords = np.dot(np.dot((np.linalg.inv(np.dot(A_T,A))), A_T), B)
+                self.p_pokeball_mask[i] = (p_coords[0]*2,p_coords[1]*2)             
+
+        pass
+
     # NOT USED, scaling factor is an easy 2
     def calculateFrameScaling(self, height, width):
         if self.aff_flag == 2:
@@ -239,7 +279,8 @@ class Video():
 
                 # draw filled black rectangle over arm mask region
                 cv2.rectangle(hsv, (self.a_lower_xbound*2, self.a_lower_ybound*2), (self.a_upper_xbound*2, self.a_upper_ybound*2), (0,0,0), -1)
-    
+                cv2.circle(hsv, self.p_base_mask[0], 110, (0,0,0), -1)
+                cv2.circle(hsv, self.p_pokeball_mask[0], 90, (0,0,0), -1)
                 hsv = cv2.bitwise_and(hsv, hsv, mask = self.boundary_mask)
 
                 # -x,y ; x,y ; x,-y;-x,-y
@@ -266,7 +307,7 @@ class Video():
                     radius = int(radius)
                     #cv2.drawContours(cpy, contours, -1, (255,255,255), 3)
                     #cv2.circle(cpy,center,radius,(255,255,255),2)
-                    if radius > 12 and radius < 38:
+                    if radius > 12 and radius < 42:
                         tmp_center = np.dot(self.aff_matrix, np.array([[center[0]],[center[1]],[1]]))
                         center = (int(tmp_center[0]),int(tmp_center[1]))
                         self.location.append(center)

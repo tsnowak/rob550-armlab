@@ -571,7 +571,7 @@ class Rexarm():
         if (isGrab == 1): #open
             self.ui.sldrGrip1.setProperty("value",26)
             self.ui.rdoutGrip1.setText(str(26)) 
-            if self.joint_angles_fb[4]*R2D > 20: #set a tolerance, chagne status to "opened"
+            if self.joint_angles_fb[4]*R2D > 22: #set a tolerance, chagne status to "opened"
                 #print('gripper opened')
                 self.gripper_status = 1
             

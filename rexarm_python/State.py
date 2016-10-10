@@ -582,7 +582,7 @@ class State_MTFT_CalculateIntermediate():#add points above pokemon and ball
 
         x_3 = self.mtft.finaltarget[0]
         y_3 = self.mtft.finaltarget[1]
-        z_3 = 40;#35
+        z_3 = 35;#35
         phi_3 = self.rexarm.rexarm_IK_CatchAnglePlaner([x_3,y_3,z_3])
         
         print("[Msg]: Catching Potion"),
@@ -660,11 +660,25 @@ class State_MTFT_GoToNextWaypoint():#cmd, check if arrived
         isArrived = False
         isArrived = self.iCheckIfArrived(target)
         
+
+        if (self.mtft.intermediatelocationcurrentnumber == 0):
+            self.rexarm.iSetSpeed(1.0)
+            self.rexarm.iSetTorque(1.0)
+        else:
+            self.rexarm.iSetSpeed(0.4)
+            self.rexarm.iSetTorque(0.7);
+
+
+
         if isArrived == True:
             #move to next point
 
             self.mtft.intermediatelocationcurrentnumber = self.mtft.intermediatelocationcurrentnumber + 1
             
+
+
+
+
 
 
             # arrived
@@ -924,11 +938,11 @@ class State_MTB_CalculateIntermediate():#add points above pokemon and ball
         """
         
         if y_1 >0:
-            x_3 = -197
+            x_3 = -250
             y_3 = 1
             z_3 = 128
         else:
-            x_3 = -197
+            x_3 = -250
             y_3 = -1
             z_3 = 128
         phi_3 = 134*D2R
