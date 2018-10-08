@@ -15,3 +15,5 @@ $ python <NAME_OF_FILE>.py
 To run rexarm_python/control_station.py gui, simply run
 
 $ python control_station.py
+
+[Link to Report](docs/armlab-report.pdf)
