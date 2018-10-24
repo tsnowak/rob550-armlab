@@ -1,3 +1,6 @@
+
+![](./media/armlab.gif)
+
 ## Compiling
 
 Running make in the top directory will compile all requisite files used in the armlab project.
