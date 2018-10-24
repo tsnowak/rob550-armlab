@@ -1,5 +1,7 @@
 
-![](./media/armlab.gif)
+<p align="center">
+    <img src="./media/armlab.gif"/>
+<p/>
 
 ## Compiling
 
